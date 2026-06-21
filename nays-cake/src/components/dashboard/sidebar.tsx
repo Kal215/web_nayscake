@@ -12,7 +12,8 @@ import {
   LogOut,
   RefreshCw,
   Menu,
-  Cake
+  Cake,
+  ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Supplier", href: "/dashboard/supplier", icon: Users },
   { name: "Stok Harian", href: "/dashboard/stok", icon: RefreshCw },
   { name: "Penjualan", href: "/dashboard/penjualan", icon: ShoppingCart },
+  { name: "Pesanan", href: "/dashboard/pesanan", icon: ClipboardList },
   { name: "Laporan", href: "/dashboard/laporan", icon: TrendingUp },
 ];
 

@@ -78,6 +78,7 @@ model Product {
   supplier     Supplier      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   stockEntries StockEntry[]
   saleItems    SaleItem[]
+  orderItems   OrderItem[]
 
   @@unique([supplierId, name]) // Pastikan kombinasi supplier+name unik
   @@map("products")
@@ -91,6 +92,7 @@ model StockEntry {
   productId  String
   date       DateTime @default(now())
   quantityIn Int                          // Jumlah barang masuk
+  quantityRemaining Int?                 // Sisa (sore) — null = belum diisi
   notes      String?
   createdAt  DateTime @default(now())
 
@@ -162,4 +164,49 @@ model Settings {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ============================================================
+// ORDER - Pesanan masuk dari WhatsApp (belum tentu jadi penjualan)
+// ============================================================
+enum OrderStatus {
+  MENUNGGU      // baru masuk dari bot
+  DIKONFIRMASI  // mamah setujui
+  SELESAI       // sudah diambil/dibayar
+  DIBATALKAN
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique          // NAY-0001, dst
+  customerPhone String?                       // nomor WA pelanggan
+  customerName  String?
+  totalAmount   Decimal     @db.Decimal(12, 2)
+  status        OrderStatus @default(MENUNGGU)
+  source        String      @default("whatsapp")
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  items OrderItem[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String                          // simpan nama saat pesan (jaga histori)
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2)      // harga jual per unit saat pesan
+  subtotal    Decimal @db.Decimal(12, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
 }
