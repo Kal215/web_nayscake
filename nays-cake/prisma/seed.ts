@@ -7,14 +7,17 @@ async function main() {
   console.log("🌱 Starting seed...");
 
   // Create admin user
-  const hashedPassword = await hash("Riskal215123", 12);
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@nayscake.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  
+  const hashedPassword = await hash(adminPassword, 12);
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@nayscake.com" },
+    where: { email: adminEmail },
     update: {},
     create: {
       name: "Admin Nay's Cake",
-      email: "admin@nayscake.com",
+      email: adminEmail,
       password: hashedPassword,
       role: UserRole.SUPER_ADMIN,
     },
