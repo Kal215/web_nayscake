@@ -20,6 +20,7 @@ async function getProducts() {
     price: Number(product.sellingPrice),
     stock: 0, // Will be calculated from stock entries
     supplier: product.supplier.name,
+    imageUrl: product.imageUrl,
   }));
 }
 

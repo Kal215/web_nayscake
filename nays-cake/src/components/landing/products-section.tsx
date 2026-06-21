@@ -17,7 +17,7 @@ interface ProductsSectionProps {
   initialProducts?: Product[];
 }
 
-const defaultProducts = [
+const defaultProducts: Product[] = [
   { id: "1", name: "Risol Segitiga", slug: "risol-segitiga", price: 1000, stock: 25, supplier: "MAS YANTO" },
   { id: "2", name: "Lapis", slug: "lapis", price: 1500, stock: 30, supplier: "MAS ARIS" },
   { id: "3", name: "Donat", slug: "donat", price: 1000, stock: 15, supplier: "MAS YANTO" },
