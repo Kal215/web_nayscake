@@ -79,7 +79,7 @@ export function HeroSection() {
             </svg>
           </Link>
           <a
-            href="https://wa.me/6281234567890"
+            href="https://wa.me/6285126023250"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-8 py-4 bg-white text-gray-800 font-semibold rounded-full shadow-lg hover:shadow-xl border border-gray-200 hover:border-amber-300 transition-all duration-300 hover:scale-105"

@@ -190,7 +190,7 @@ Default admin credentials:
 
 Products display a "Pesan via WhatsApp" button that opens WhatsApp with a pre-filled message:
 ```
-https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20[Nama%20Produk]
+https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20[Nama%20Produk]
 ```
 
 ## 🎨 Design System

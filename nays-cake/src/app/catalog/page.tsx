@@ -55,7 +55,7 @@ export default function CatalogPage() {
 
   const headerRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
-  
+
   const headerOpacity = useTransform(scrollY, [0, 100], [1, 0.95]);
   const headerBlur = useTransform(scrollY, [0, 100], [0, 8]);
 
@@ -215,7 +215,7 @@ export default function CatalogPage() {
             <div className="flex gap-4 items-center">
               <input
                 type="range"
-                min="500"
+                min="1000"
                 max="15000"
                 step="500"
                 value={priceRange[0]}
@@ -226,7 +226,7 @@ export default function CatalogPage() {
               />
               <input
                 type="range"
-                min="500"
+                min="1000"
                 max="15000"
                 step="500"
                 value={priceRange[1]}
@@ -237,7 +237,7 @@ export default function CatalogPage() {
               />
             </div>
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Rp 500</span>
+              <span>Rp 1000</span>
               <span>Rp 15.000</span>
             </div>
           </div>
@@ -312,14 +312,13 @@ export default function CatalogPage() {
                       </p>
 
                       <a
-                        href={`https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}`}
+                        href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all duration-300 ${
-                          product.isAvailable
-                            ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg hover:shadow-green-500/30"
-                            : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                        }`}
+                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all duration-300 ${product.isAvailable
+                          ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg hover:shadow-green-500/30"
+                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          }`}
                       >
                         <MessageCircle className="w-5 h-5" />
                         {product.isAvailable ? "Pesan via WhatsApp" : "Stok Habis"}
@@ -343,11 +342,10 @@ export default function CatalogPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                      currentPage === page
-                        ? "bg-amber-500 text-white shadow"
-                        : "bg-white shadow hover:shadow-md"
-                    }`}
+                    className={`w-10 h-10 rounded-lg font-medium transition-all ${currentPage === page
+                      ? "bg-amber-500 text-white shadow"
+                      : "bg-white shadow hover:shadow-md"
+                      }`}
                   >
                     {page}
                   </button>

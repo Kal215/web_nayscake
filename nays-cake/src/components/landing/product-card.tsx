@@ -41,7 +41,7 @@ export function ProductCard({ id, name, slug, price, imageUrl, stock, index }: P
             🎂
           </div>
         )}
-        
+
         {/* Stock Badge */}
         <div className="absolute top-3 right-3">
           {isAvailable ? (
@@ -70,16 +70,15 @@ export function ProductCard({ id, name, slug, price, imageUrl, stock, index }: P
         <div className="text-2xl font-bold text-amber-600 mb-4">
           Rp {price.toLocaleString("id-ID")}
         </div>
-        
+
         <a
-          href={`https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(name)}`}
+          href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(name)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all duration-300 ${
-            isAvailable
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all duration-300 ${isAvailable
               ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/30"
               : "bg-gray-200 text-gray-500 cursor-not-allowed"
-          }`}
+            }`}
         >
           <MessageCircle className="w-5 h-5" />
           {isAvailable ? "Pesan via WhatsApp" : "Stok Habis"}

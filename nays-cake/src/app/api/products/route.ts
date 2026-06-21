@@ -79,8 +79,17 @@ export async function GET(request: Request) {
     // Get unique categories
     const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
 
-    // Get unique suppliers
-    const suppliers = [...new Set(products.map((p) => p.supplier.name))];
+    // Get unique suppliers with IDs
+    const supplierMap = new Map();
+    products.forEach((p) => {
+      if (!supplierMap.has(p.supplierId)) {
+        supplierMap.set(p.supplierId, {
+          id: p.supplierId,
+          name: p.supplier.name,
+        });
+      }
+    });
+    const suppliers = Array.from(supplierMap.values());
 
     return NextResponse.json({
       products: productsWithStock,
@@ -92,6 +101,55 @@ export async function GET(request: Request) {
     console.error("Get products error:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
+    );
+  }
+}
+
+// POST /api/products - Create a new product
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { name, costPrice, sellingPrice, category, supplierId, imageUrl } = body;
+
+    // Validate required fields
+    if (!name || !costPrice || !sellingPrice || !supplierId) {
+      return NextResponse.json(
+        { error: "Name, cost price, selling price, and supplier are required" },
+        { status: 400 }
+      );
+    }
+
+    // Generate a unique slug
+    const slug =
+      name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "") +
+      "-" +
+      Date.now().toString(36);
+
+    const product = await prisma.product.create({
+      data: {
+        name,
+        slug,
+        costPrice,
+        sellingPrice,
+        category,
+        supplierId,
+        imageUrl,
+      },
+      include: {
+        supplier: true,
+      },
+    });
+
+    return NextResponse.json(product, { status: 201 });
+  } catch (error) {
+    console.error("Create product error:", error);
+    return NextResponse.json(
+      { error: "Failed to create product" },
       { status: 500 }
     );
   }

@@ -77,7 +77,7 @@ export function ProductsSection({ initialProducts }: ProductsSectionProps) {
                       <span className="text-7xl">🎂</span>
                     </div>
                   )}
-                  
+
                   {/* Stock Badge */}
                   <div className="absolute top-4 right-4">
                     {isAvailable ? (
@@ -101,16 +101,15 @@ export function ProductsSection({ initialProducts }: ProductsSectionProps) {
                   <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent mb-4">
                     Rp {product.price.toLocaleString("id-ID")}
                   </div>
-                  
+
                   <a
-                    href={`https://wa.me/6281234567890?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}`}
+                    href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                      isAvailable
+                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all duration-300 ${isAvailable
                         ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg hover:shadow-amber-500/30"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     <MessageCircle className="w-5 h-5" />
                     {isAvailable ? "Pesan Sekarang" : "Stok Habis"}
