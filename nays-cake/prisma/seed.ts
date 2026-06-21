@@ -7,9 +7,9 @@ async function main() {
   console.log("🌱 Starting seed...");
 
   // Create admin user
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@nayscake.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-  
+  const adminEmail = process.env.ADMIN_EMAIL || "Riskal";
+  const adminPassword = process.env.ADMIN_PASSWORD || "Riskal215123";
+
   const hashedPassword = await hash(adminPassword, 12);
 
   const admin = await prisma.user.upsert({
