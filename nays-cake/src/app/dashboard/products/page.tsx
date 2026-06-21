@@ -140,10 +140,12 @@ export default function ProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const productName = p.name || "";
+    const supplierName = typeof p.supplier === 'string' ? p.supplier : (p.supplier?.name || "");
+    return productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           supplierName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice(

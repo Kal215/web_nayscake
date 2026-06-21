@@ -72,9 +72,9 @@ export default function CatalogPage() {
     try {
       const response = await fetch("/api/products");
       const data: ProductsResponse = await response.json();
-      setAllProducts(data.products);
-      setCategories(data.categories);
-      setSuppliers(data.suppliers);
+      setAllProducts(data.products || []);
+      setCategories(data.categories || []);
+      setSuppliers(data.suppliers || []);
     } catch (error) {
       console.error("Failed to fetch products:", error);
     } finally {
@@ -87,9 +87,12 @@ export default function CatalogPage() {
 
     if (search) {
       filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.supplier.toLowerCase().includes(search.toLowerCase())
+        (p) => {
+          const productName = p.name || "";
+          const supplierName = typeof p.supplier === 'string' ? p.supplier : (p.supplier?.name || "");
+          return productName.toLowerCase().includes(search.toLowerCase()) ||
+                 supplierName.toLowerCase().includes(search.toLowerCase());
+        }
       );
     }
 
