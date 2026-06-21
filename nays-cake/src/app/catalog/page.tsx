@@ -24,7 +24,7 @@ interface Product {
 interface ProductsResponse {
   products: Product[];
   categories: string[];
-  suppliers: string[];
+  suppliers: { id: string; name: string }[];
   total: number;
 }
 
@@ -44,7 +44,7 @@ export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -196,8 +196,8 @@ export default function CatalogPage() {
               >
                 <option value="">Semua Supplier</option>
                 {suppliers.map((sup) => (
-                  <option key={sup} value={sup}>
-                    {sup}
+                  <option key={sup.id} value={sup.name}>
+                    {sup.name}
                   </option>
                 ))}
               </select>
