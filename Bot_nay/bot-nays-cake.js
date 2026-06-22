@@ -88,6 +88,8 @@ const CONFIG = {
     STATE_FILE: path.join(__dirname, 'state-wa.json'),
     STATE_SAVE_MS: 15000,
 
+    PERCAKAPAN_TIMEOUT_MS: 10 * 60 * 1000,  // 10 menit idle → reset percakapan
+
     AUTH_DIR: path.join(__dirname, 'auth_baileys'),
     TIMEZONE: process.env.TIMEZONE || 'Asia/Jakarta',
     PREFIX_AI: process.env.PREFIX_AI || "(AI Nay's Cake) : ",
@@ -207,6 +209,33 @@ function simpanHistori(key, role, content) {
     tandaiStateBerubah();
 }
 
+// ---- Percakapan pesanan (state machine per pelanggan) ----
+const percakapan = new Map();
+function ambilPercakapan(key) {
+    if (!percakapan.has(key)) {
+        percakapan.set(key, { tahap: 'IDLE', itemPending: [], updatedAt: Date.now() });
+    }
+    const p = percakapan.get(key);
+    // Auto-reset jika idle terlalu lama
+    if (p.tahap !== 'IDLE' && (Date.now() - p.updatedAt) > CONFIG.PERCAKAPAN_TIMEOUT_MS) {
+        p.tahap = 'IDLE';
+        p.itemPending = [];
+        p.updatedAt = Date.now();
+        tandaiStateBerubah();
+    }
+    return p;
+}
+function setPercakapan(key, tahap, itemPending) {
+    const p = ambilPercakapan(key);
+    p.tahap = tahap;
+    if (itemPending !== undefined) p.itemPending = itemPending;
+    p.updatedAt = Date.now();
+    tandaiStateBerubah();
+}
+function resetPercakapan(key) {
+    setPercakapan(key, 'IDLE', []);
+}
+
 const spamWindow = new Map();
 const diblokir = new Map();
 const sudahDinotif = new Set();
@@ -243,6 +272,7 @@ function simpanState() {
             historiAkses: Array.from(historiAkses.entries()),
             diblokir: Array.from(diblokir.entries()),
             pauseChat: Array.from(pauseChat.entries()),
+            percakapan: Array.from(percakapan.entries()),
         };
         const tmp = CONFIG.STATE_FILE + '.tmp';
         fs.writeFileSync(tmp, JSON.stringify(data));
@@ -259,7 +289,16 @@ function muatState() {
         if (Array.isArray(data.historiAkses)) for (const [k, v] of data.historiAkses) historiAkses.set(k, v);
         if (Array.isArray(data.diblokir)) for (const [k, v] of data.diblokir) if (v > now) diblokir.set(k, v);
         if (Array.isArray(data.pauseChat)) for (const [k, v] of data.pauseChat) if (v > now) pauseChat.set(k, v);
-        console.log(`[STATE] dimuat: ${histori.size} percakapan, ${diblokir.size} blokir.`);
+        if (Array.isArray(data.percakapan)) {
+            for (const [k, v] of data.percakapan) {
+                // Reset percakapan yang sudah timeout
+                if (v && v.tahap !== 'IDLE' && (now - (v.updatedAt || 0)) > CONFIG.PERCAKAPAN_TIMEOUT_MS) {
+                    v.tahap = 'IDLE'; v.itemPending = [];
+                }
+                percakapan.set(k, v);
+            }
+        }
+        console.log(`[STATE] dimuat: ${histori.size} percakapan, ${diblokir.size} blokir, ${percakapan.size} state pesanan.`);
     } catch (e) { console.error('Gagal muat state:', e.message); }
 }
 function bersihkanMemori() {
@@ -268,6 +307,12 @@ function bersihkanMemori() {
     for (const [k, arr] of spamWindow.entries()) { const s = arr.filter(t => now - t < CONFIG.SPAM_WINDOW_MS); if (!s.length) spamWindow.delete(k); else spamWindow.set(k, s); }
     for (const [k, s] of diblokir.entries()) if (now >= s) { diblokir.delete(k); sudahDinotif.delete(k); }
     for (const [k, s] of pauseChat.entries()) if (now >= s) pauseChat.delete(k);
+    // Bersihkan percakapan yang idle terlalu lama
+    for (const [k, p] of percakapan.entries()) {
+        if (p.tahap === 'IDLE' && (now - (p.updatedAt || 0)) > CONFIG.HISTORY_TTL_MS) {
+            percakapan.delete(k);
+        }
+    }
     if (dibuang > 0) { console.log(`[CLEAN] ${dibuang} percakapan lama dibuang.`); tandaiStateBerubah(); }
 }
 
@@ -304,6 +349,8 @@ async function tanyaAI(systemPrompt, riwayat, pesanBaru) {
 }
 function buatSystemPrompt(waktu, sapaanTetap) {
     return `Kamu adalah asisten WhatsApp untuk "Nay's Cake", toko kue basah & jajanan tradisional. Jawab ramah, hangat, santai, sopan. Sapaan menyesuaikan ("Kak"/"Bapak"/"Ibu"). Jujur sebagai asisten Nay's Cake (jangan mengaku manusia). Jangan memaksa jualan; pelanggan yang hanya bertanya harus merasa nyaman.
+
+ATURAN MUTLAK: Kamu (AI) DILARANG menulis konfirmasi pesanan dalam bentuk apa pun. JANGAN PERNAH menulis "Pesanan dicatat", nomor pesanan "NAY-xxxx", "Tersimpan di sistem", atau total harga sebuah pesanan. Pencatatan pesanan SEPENUHNYA ditangani sistem, bukan kamu. Jika pelanggan ingin memesan/membeli atau memilih varian/jumlah, JANGAN membuat ringkasan pesanan atau nomor; cukup arahkan singkat (mis. "Baik, sebutkan ulang ya: nama kue + jumlah 😊") agar sistem yang memprosesnya. Kamu juga DILARANG menghitung/menyebut total harga pesanan — itu tugas sistem.
 
 FAKTA TOKO (jawab HANYA berdasarkan ini; jika tak tahu, arahkan ke admin — JANGAN mengarang, terutama soal komposisi/alergen/halal/klaim kesehatan):
 
@@ -390,18 +437,32 @@ function balasHarga(teksAsli) {
     return `*${p.nama}* harganya ${rupiah(p.harga)} per buah.\n\nMau pesan berapa? Balas contoh: *${p.nama.toLowerCase()} 10* 🙂\n\n📋 Menu lengkap & foto: nayscake.vercel.app`;
 }
 
-// ---- Balas pesanan (async) ----
-async function balasPesan(teksAsli, jid) {
+// ---- Format ringkasan item (dipakai berulang) ----
+function formatRingkasanItem(itemList) {
+    let teks = '';
+    let total = 0;
+    for (const i of itemList) {
+        const subtotal = i.harga * i.jumlah;
+        teks += `• ${i.nama} × ${i.jumlah} = ${rupiah(subtotal)}\n`;
+        total += subtotal;
+    }
+    teks += `────────────\n*Total: ${rupiah(total)}*`;
+    return { teks, total };
+}
+
+// ---- Balas pesanan: SIMPAN ke pending, tanya beli/pesan (TIDAK langsung kirim) ----
+function balasPesanPending(teksAsli, key) {
     const { items, gagal } = toko.parsePesanan(teksAsli);
     const ok = items.filter(i => i.status === 'ok');
     const pilih = items.filter(i => i.status === 'pilih');
     const varian = items.filter(i => i.status === 'ambigu');
 
     if (!ok.length && !pilih.length && !varian.length) {
-        return { teks: `Maaf, saya belum menangkap pesanannya. Boleh tulis nama kue dan jumlahnya? Contoh: *risol ayam 10, dimsum 2* 🙏`, dicatat: false, nomor: null };
+        return { teks: `Maaf, saya belum menangkap pesanannya. Boleh tulis nama kue dan jumlahnya? Contoh: *risol ayam 10, dimsum 2* 🙏`, tahapBaru: null };
     }
 
     let teks = '';
+    // Kalau ada yang ambigu/pilih, minta klarifikasi dulu (jangan masuk PILIH_MODE)
     if (pilih.length) {
         for (const it of pilih) {
             teks += `Untuk "${it.teksAsli}", ada beberapa jenis:\n`;
@@ -416,40 +477,76 @@ async function balasPesan(teksAsli, jid) {
             teks += `\nMau yang mana? 🙂\n\n`;
         }
     }
-
-    let dicatat = false;
-    let nomorOrder = null;
-    if (ok.length) {
-        // Kirim ke website (async)
-        const hasil = await pesananDB.tambah(jid, ok.map(i => ({
-            id: i.id,
-            nama: i.nama,
-            jumlah: i.jumlah,
-            harga: i.harga,
-            subtotal: i.subtotal,
-            pemasok: i.pemasok,
-        })));
-        
-        dicatat = true;
-        nomorOrder = hasil.nomor;
-
-        teks += `📝 *Pesanan dicatat* (No. ${nomorOrder})\n`;
-        teks += ok.map(i => `• ${i.nama} × ${i.jumlah} = ${rupiah(i.subtotal)}`).join('\n');
-        teks += `\n────────────\n*Total: ${rupiah(hasil.total)}*\n\n`;
-        teks += `Pesanan menunggu konfirmasi admin (ketersediaan & waktu ambil). Mohon ditunggu ya 🙏`;
-        if (hasil.sumber === 'WEB') {
-            teks += `\n\n✅ Tersimpan di sistem website.`;
-        } else {
-            teks += `\n\n⚠️ (Offline mode - akan sinkron nanti)`;
-        }
-        if (gagal.length) teks += `\n\n(Catatan: "${gagal.join(', ')}" belum saya kenali, boleh diperjelas.)`;
+    // Jika ada item yang belum jelas, jangan masuk PILIH_MODE — minta pilih dulu
+    if (!ok.length) {
+        return { teks: teks.trim(), tahapBaru: null };
     }
 
-    return { teks: teks.trim(), dicatat, nomor: nomorOrder };
+    // Ada item OK → simpan ke pending, tanya beli/pesan
+    const itemPending = ok.map(i => ({
+        id: i.id, nama: i.nama, harga: i.harga, jumlah: i.jumlah,
+        pemasok: i.pemasok, subtotal: i.harga * i.jumlah,
+    }));
+    setPercakapan(key, 'PILIH_MODE', itemPending);
+
+    const { teks: ringkasan } = formatRingkasanItem(itemPending);
+    let balasan = '';
+    // Kalau ada juga item ambigu, tampilkan dulu
+    if (teks) balasan += teks + '\n';
+    balasan += ringkasan;
+    balasan += ` 😊\n\nMau diambil sekarang (ketik *beli*) atau dipesan untuk hari tertentu (ketik *pesan*)? Kalau cuma mau tanya-tanya juga boleh kok 🙏`;
+    balasan += `\n\n📋 Menu & foto: nayscake.vercel.app`;
+    if (gagal.length) balasan += `\n\n(Catatan: "${gagal.join(', ')}" belum saya kenali, boleh diperjelas.)`;
+
+    return { teks: balasan.trim(), tahapBaru: 'PILIH_MODE' };
+}
+
+// ---- Tangani jawaban saat tahap PILIH_MODE (kode, bukan AI) ----
+async function tanganiPilihMode(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+
+    // Cek apakah pelanggan memilih BELI
+    if (/\bbeli\b/.test(t)) {
+        const { teks: ringkasan, total } = formatRingkasanItem(p.itemPending);
+        let balasan = `Siap! Langsung mampir ke toko aja ya 😊\n\n${ringkasan}\n\nToko Utama (Cililin) buka 06.00–18.00, Cabang (Rancapanggung) 07.00–12.00.\nDitunggu ya! 🙏`;
+        resetPercakapan(key);
+        console.log(`[BELI] ${jid}: total ${total}, TIDAK kirim ke website`);
+        logToFile('BELI_LANGSUNG', { jid, total, itemCount: p.itemPending.length });
+        return { balas: balasan, pakaiAI: false, maksud: 'beli' };
+    }
+
+    // Cek apakah pelanggan memilih PESAN
+    if (/\bpesan\b/.test(t)) {
+        // Kirim pesanan ke website via pesanan.js (kode, bukan AI)
+        const itemUntukKirim = p.itemPending.map(i => ({
+            id: i.id, nama: i.nama, jumlah: i.jumlah,
+            harga: i.harga, subtotal: i.subtotal, pemasok: i.pemasok,
+        }));
+        const hasil = await pesananDB.tambah(jid, itemUntukKirim);
+        const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
+
+        let balasan = `📝 *Pesanan dicatat* (No. ${hasil.nomor})\n\n${ringkasan}\n\n`;
+        balasan += `Pesanan menunggu konfirmasi admin (ketersediaan & waktu ambil). Mohon ditunggu ya 🙏`;
+        if (hasil.sumber === 'WEB') {
+            balasan += `\n\n✅ Tersimpan di sistem website.`;
+        } else {
+            balasan += `\n\n⚠️ (Offline mode - akan sinkron nanti)`;
+        }
+        resetPercakapan(key);
+        console.log(`[PESAN] ${jid}: ${hasil.nomor} total ${hasil.total} (${hasil.sumber})`);
+        logToFile('PESAN_DICATAT', { jid, nomor: hasil.nomor, total: hasil.total, sumber: hasil.sumber });
+        return { balas: balasan, pakaiAI: false, maksud: 'pesan', dicatat: true };
+    }
+
+    // Pelanggan bilang "tanya" atau lainnya → tidak jadi, reset
+    resetPercakapan(key);
+    const balasan = `Oke, santai aja Kak 😊 Ada yang mau ditanyakan? Atau lihat menu di nayscake.vercel.app ya 🙏`;
+    return { balas: balasan, pakaiAI: false, maksud: 'batal_pesan' };
 }
 
 // Router utama non-AI. Mengembalikan {balas, pakaiAI}
-async function jawabNonAI(teksAsli, jid, sapaanTetap) {
+async function jawabNonAI(teksAsli, jid, sapaanTetap, key) {
     const maksud = toko.deteksiMaksud(teksAsli);
     switch (maksud) {
         case 'sapaan': return { balas: sapaanTetap, pakaiAI: false, maksud };
@@ -457,8 +554,8 @@ async function jawabNonAI(teksAsli, jid, sapaanTetap) {
         case 'lokasi': return { balas: balasLokasi(), pakaiAI: false, maksud };
         case 'harga':  return { balas: balasHarga(teksAsli), pakaiAI: false, maksud };
         case 'pesan': {
-            const r = await balasPesan(teksAsli, jid);
-            return { balas: r.teks, pakaiAI: false, maksud, dicatat: r.dicatat };
+            const r = balasPesanPending(teksAsli, key);
+            return { balas: r.teks, pakaiAI: false, maksud, dicatat: false };
         }
         default: return { balas: null, pakaiAI: true, maksud };
     }
@@ -732,8 +829,21 @@ async function prosesGabungan(key, data) {
         if (adaInjection) { logToFile('INJECTION', { key }); console.log(`[WARN] Injection? ${key}`); }
         logToFile('IN', { dari: key, baris: data.teks.length, body: gabunganTeks });
 
+        // ---- LANGKAH 0: CEK TAHAP PERCAKAPAN (state machine) ----
+        const percakapanState = ambilPercakapan(key);
+        if (percakapanState.tahap === 'PILIH_MODE') {
+            const hasil = await tanganiPilihMode(key, jid, gabunganTeks);
+            try { await sock.sendPresenceUpdate('paused', jid); } catch (_) {}
+            await botKirim(jid, denganPrefix(hasil.balas));
+            simpanHistori(key, 'user', gabunganTeks);
+            simpanHistori(key, 'assistant', hasil.balas);
+            console.log(`[PILIH_MODE:${hasil.maksud}] ${jid}`);
+            logToFile('OUT_PILIH_MODE', { ke: key, maksud: hasil.maksud, dicatat: !!hasil.dicatat });
+            return;
+        }
+
         // ---- LANGKAH 1: COBA JAWAB TANPA AI (gratis & instan) ----
-        const nonAI = await jawabNonAI(gabunganTeks, jid, sapaanTetap);
+        const nonAI = await jawabNonAI(gabunganTeks, jid, sapaanTetap, key);
         if (!nonAI.pakaiAI && nonAI.balas) {
             try { await sock.sendPresenceUpdate('paused', jid); } catch (_) {}
             await botKirim(jid, denganPrefix(nonAI.balas));
