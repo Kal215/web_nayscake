@@ -185,6 +185,7 @@ model Order {
   status        OrderStatus @default(MENUNGGU)
   source        String      @default("whatsapp")
   notes         String?
+  notifiedAt    DateTime?                    // kapan admin dinotifikasi via WA; null = belum
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -196,13 +197,13 @@ model Order {
 }
 
 model OrderItem {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   orderId     String
   productId   String
   productName String                          // simpan nama saat pesan (jaga histori)
   quantity    Int
-  price       Decimal @db.Decimal(10, 2)      // harga jual per unit saat pesan
-  subtotal    Decimal @db.Decimal(12, 2)
+  price       Decimal  @db.Decimal(10, 2)    // harga jual per unit saat pesan
+  subtotal    Decimal  @db.Decimal(12, 2)    // quantity * price
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
