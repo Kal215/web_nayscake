@@ -45,7 +45,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { customerPhone, customerName, notes, items, orderType, pickupAt, pickupRaw } = body;
+    const { customerPhone, customerName, notes, items, orderType, pickupAt, pickupRaw, pickupLocation } = body;
+
+    // Validasi ringan pickupLocation: hanya terima "UTAMA" atau "CABANG"
+    const loc = pickupLocation;
+    const validPickupLocation = (loc === "UTAMA" || loc === "CABANG") ? loc : null;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "items wajib diisi" }, { status: 400 });
@@ -89,6 +93,7 @@ export async function POST(request: Request) {
         orderType: orderType ?? null,
         pickupAt: pickupAt ? new Date(pickupAt) : null,
         pickupRaw: pickupRaw ?? null,
+        pickupLocation: validPickupLocation,
         totalAmount,
         items: { create: itemData },
       },

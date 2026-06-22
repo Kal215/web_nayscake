@@ -12,7 +12,8 @@ import {
   Loader2,
   Package,
   AlertCircle,
-  CalendarClock
+  CalendarClock,
+  MapPin
 } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TombolKembali } from "@/components/dashboard/TombolKembali";
@@ -40,6 +41,7 @@ interface Order {
   orderType?: string | null;
   pickupAt?: string | null;
   pickupRaw?: string | null;
+  pickupLocation?: string | null;
   createdAt: string;
   items: OrderItem[];
 }
@@ -296,6 +298,16 @@ export default function PesananPage() {
                                 minute: "2-digit",
                               })
                             : order.pickupRaw}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Lokasi Ambil */}
+                    {order.pickupLocation && (
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                        <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="text-blue-800 font-medium">
+                          Ambil di: {order.pickupLocation === "UTAMA" ? "Toko Utama (Cililin)" : "Cabang (Rancapanggung)"}
                         </span>
                       </div>
                     )}
