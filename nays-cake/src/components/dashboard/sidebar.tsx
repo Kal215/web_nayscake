@@ -39,7 +39,7 @@ export function Sidebar({ children }: SidebarProps) {
   const { count } = usePesananBaru(15000);
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/login" });
+    await signOut({ redirectTo: "/login" });
   };
 
   return (

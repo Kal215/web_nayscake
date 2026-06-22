@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Package, Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, ImagePlus, X, Save } from "lucide-react";
 import Image from "next/image";
 import { CldUploadWidget } from "next-cloudinary";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 interface Supplier {
   id: string;
@@ -163,6 +164,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TombolKembali />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Manajemen Produk</h1>

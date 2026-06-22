@@ -40,17 +40,29 @@ export function AlarmPesanan() {
     }
   }
 
+  function matikanSuara() {
+    setSuaraAktif(false);
+  }
+
   return (
     <>
-      {/* Tombol aktifkan suara (muncul kalau belum aktif) */}
-      {!suaraAktif && (
-        <button
-          onClick={aktifkanSuara}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-full shadow-lg hover:bg-amber-600"
-        >
-          <BellOff className="w-4 h-4" /> Aktifkan suara
-        </button>
-      )}
+      {/* Tombol aktifkan/matikan suara */}
+      <button
+        onClick={suaraAktif ? matikanSuara : aktifkanSuara}
+        className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 text-white rounded-full shadow-lg transition-colors ${
+          suaraAktif ? "bg-green-500 hover:bg-green-600" : "bg-amber-500 hover:bg-amber-600"
+        }`}
+      >
+        {suaraAktif ? (
+          <>
+            <Bell className="w-4 h-4" /> Suara aktif
+          </>
+        ) : (
+          <>
+            <BellOff className="w-4 h-4" /> Aktifkan suara
+          </>
+        )}
+      </button>
 
       {/* Banner pesanan baru */}
       {tampilBanner && (

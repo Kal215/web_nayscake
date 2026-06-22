@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart, Calendar, Download, TrendingUp } from "lucide-react";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 const sampleData = [
   { date: "Senin", sales: 450000, profit: 95000 },
@@ -28,6 +29,7 @@ export default function LaporanPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TombolKembali />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Laporan Penjualan</h1>

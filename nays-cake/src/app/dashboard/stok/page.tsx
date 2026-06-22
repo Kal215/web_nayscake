@@ -17,6 +17,7 @@ import {
   Loader2
 } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 interface Product {
   id: string;
@@ -244,6 +245,7 @@ export default function StokPage() {
   return (
     <Sidebar>
       <div className="max-w-7xl mx-auto">
+        <TombolKembali />
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>

@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 type OrderStatus = "MENUNGGU" | "DIKONFIRMASI" | "SELESAI" | "DIBATALKAN";
 
@@ -177,6 +178,7 @@ export default function PesananPage() {
   return (
     <Sidebar>
       <div className="max-w-7xl mx-auto">
+        <TombolKembali />
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 hidden lg:block">Pesanan Masuk</h1>

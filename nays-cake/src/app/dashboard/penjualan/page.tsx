@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, Plus, Minus, Trash2, Loader2, Calendar, TrendingUp } from "lucide-react";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 interface Product {
   id: string;
@@ -81,6 +82,7 @@ export default function PenjualanPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TombolKembali />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Transaksi Penjualan</h1>
