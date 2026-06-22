@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { customerPhone, customerName, notes, items } = body;
+    const { customerPhone, customerName, notes, items, orderType, pickupAt, pickupRaw } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "items wajib diisi" }, { status: 400 });
@@ -86,6 +86,9 @@ export async function POST(request: Request) {
         customerPhone: customerPhone ?? null,
         customerName: customerName ?? null,
         notes: notes ?? null,
+        orderType: orderType ?? null,
+        pickupAt: pickupAt ? new Date(pickupAt) : null,
+        pickupRaw: pickupRaw ?? null,
         totalAmount,
         items: { create: itemData },
       },

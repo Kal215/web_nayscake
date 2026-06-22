@@ -11,7 +11,8 @@ import {
   User,
   Loader2,
   Package,
-  AlertCircle
+  AlertCircle,
+  CalendarClock
 } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TombolKembali } from "@/components/dashboard/TombolKembali";
@@ -36,6 +37,9 @@ interface Order {
   status: OrderStatus;
   source: string;
   notes: string | null;
+  orderType?: string | null;
+  pickupAt?: string | null;
+  pickupRaw?: string | null;
   createdAt: string;
   items: OrderItem[];
 }
@@ -252,7 +256,7 @@ export default function PesananPage() {
                     </div>
 
                     {/* Customer Info */}
-                    <div className="flex gap-4 mb-4 text-sm">
+                    <div className="flex flex-wrap gap-4 mb-4 text-sm">
                       {order.customerName && (
                         <div className="flex items-center gap-2 text-gray-600">
                           <User className="w-4 h-4" />
@@ -265,7 +269,36 @@ export default function PesananPage() {
                           {order.customerPhone}
                         </div>
                       )}
+                      {order.orderType && (
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          order.orderType === "PESANAN"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {order.orderType === "PESANAN" ? "Pre-Order" : "Beli Langsung"}
+                        </span>
+                      )}
                     </div>
+
+                    {/* Jadwal Ambil */}
+                    {(order.pickupAt || order.pickupRaw) && (
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl text-sm">
+                        <CalendarClock className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        <span className="text-purple-800 font-medium">
+                          Ambil:{" "}
+                          {order.pickupAt
+                            ? new Date(order.pickupAt).toLocaleDateString("id-ID", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : order.pickupRaw}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Items */}
                     <div className="border-t border-b border-gray-100 py-3 mb-4 space-y-2">

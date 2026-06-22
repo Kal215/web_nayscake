@@ -185,6 +185,9 @@ model Order {
   status        OrderStatus @default(MENUNGGU)
   source        String      @default("whatsapp")
   notes         String?
+  orderType     String?                      // "BELI" atau "PESANAN" (pre-order). null = lama/tak diketahui
+  pickupAt      DateTime?                    // jadwal ambil (hasil AI parse tanggal), null bila tak ada/gagal
+  pickupRaw     String?                      // teks tanggal asli dari pelanggan (cadangan, mis. "25 Des jam 10")
   notifiedAt    DateTime?                    // kapan admin dinotifikasi via WA; null = belum
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
