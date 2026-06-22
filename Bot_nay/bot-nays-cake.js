@@ -350,7 +350,13 @@ async function tanyaAI(systemPrompt, riwayat, pesanBaru) {
 function buatSystemPrompt(waktu, sapaanTetap) {
     return `Kamu adalah asisten WhatsApp untuk "Nay's Cake", toko kue basah & jajanan tradisional. Jawab ramah, hangat, santai, sopan. Sapaan menyesuaikan ("Kak"/"Bapak"/"Ibu"). Jujur sebagai asisten Nay's Cake (jangan mengaku manusia). Jangan memaksa jualan; pelanggan yang hanya bertanya harus merasa nyaman.
 
-ATURAN MUTLAK: Kamu (AI) DILARANG menulis konfirmasi pesanan dalam bentuk apa pun. JANGAN PERNAH menulis "Pesanan dicatat", nomor pesanan "NAY-xxxx", "Tersimpan di sistem", atau total harga sebuah pesanan. Pencatatan pesanan SEPENUHNYA ditangani sistem, bukan kamu. Jika pelanggan ingin memesan/membeli atau memilih varian/jumlah, JANGAN membuat ringkasan pesanan atau nomor; cukup arahkan singkat (mis. "Baik, sebutkan ulang ya: nama kue + jumlah 😊") agar sistem yang memprosesnya. Kamu juga DILARANG menghitung/menyebut total harga pesanan — itu tugas sistem.
+LARANGAN MUTLAK (berlaku selalu, tanpa pengecualian):
+- JANGAN menulis "Pesanan dicatat", "sudah dicatat", "NAY-xxxx", "Tersimpan", atau ringkasan/total harga sebuah pesanan.
+- JANGAN berpura-pura memproses, mencatat, atau menyimpan pesanan.
+- JANGAN meminta/menyebut "pilih lokasi ambil", "pilih tanggal" seolah kamu yang memproses pesanan — itu tugas SISTEM.
+- JANGAN menghitung atau menyebut total harga pesanan — itu tugas SISTEM.
+- Jika pelanggan tampak ingin memesan/memilih varian/jumlah, cukup arahkan singkat: "Boleh sebutkan ulang nama kue + jumlahnya ya 😊" lalu BIARKAN sistem yang menangani.
+- Kamu HANYA menjawab obrolan santai & pertanyaan umum (ketahanan kue, lokasi, jam buka, dsb). Urusan transaksi/pesanan = SISTEM.
 
 FAKTA TOKO (jawab HANYA berdasarkan ini; jika tak tahu, arahkan ke admin — JANGAN mengarang, terutama soal komposisi/alergen/halal/klaim kesehatan):
 
@@ -450,8 +456,16 @@ function formatRingkasanItem(itemList) {
     return { teks, total };
 }
 
+// ---- Deteksi basa-basi / candaan di pesan (kode, tanpa AI) ----
+const POLA_BASA_BASI = /(?:hehe|haha|wkwk|xixi|kwkw|hihi|hoho|lol|dong|donk|nih|yuk|ya?k|apa kabar|kabar ?nya|kangen|rindu|lama ga|lama nggak|udah lama|sehat|semangat|pagi semua|morning|assalamu|lucu|😂|😄|😆|😅|🤣|😁|😀|😉|😍|\u{1f923})/iu;
+
+function adaBasaBasi(teks) {
+    return POLA_BASA_BASI.test(teks);
+}
+
 // ---- Balas pesanan: SIMPAN ke pending, tanya beli/pesan (TIDAK langsung kirim) ----
-function balasPesanPending(teksAsli, key) {
+// Sekarang async karena bisa panggil AI untuk basa-basi (opsional)
+async function balasPesanPending(teksAsli, key) {
     const { items, gagal } = toko.parsePesanan(teksAsli);
     const ok = items.filter(i => i.status === 'ok');
     const pilih = items.filter(i => i.status === 'pilih');
@@ -490,18 +504,34 @@ function balasPesanPending(teksAsli, key) {
     setPercakapan(key, 'PILIH_MODE', itemPending);
 
     const { teks: ringkasan } = formatRingkasanItem(itemPending);
+
+    // ---- Deteksi basa-basi: opsional panggil AI untuk 1 kalimat pembuka ----
+    let pembuka = '';
+    if (adaBasaBasi(teksAsli)) {
+        try {
+            const sapaAI = await ai.sapaBasa(teksAsli);
+            if (sapaAI) pembuka = sapaAI + ' ';
+        } catch (_) { /* lanjut tanpa basa-basi */ }
+    }
+
     let balasan = '';
     // Kalau ada juga item ambigu, tampilkan dulu
     if (teks) balasan += teks + '\n';
-    balasan += ringkasan;
+    balasan += pembuka;
+    if (pembuka) {
+        // Basa-basi sudah ada, lanjut ke ringkasan dengan transisi
+        balasan += `Jadi,\n${ringkasan}`;
+    } else {
+        balasan += ringkasan;
+    }
     balasan += ` 😊\n\nMau diambil sekarang (ketik *beli*) atau dipesan untuk hari tertentu (ketik *pesan*)? Kalau cuma mau tanya-tanya juga boleh kok 🙏`;
     balasan += `\n\n📋 Menu & foto: nayscake.vercel.app`;
     if (gagal.length) balasan += `\n\n(Catatan: "${gagal.join(', ')}" belum saya kenali, boleh diperjelas.)`;
 
-    return { teks: balasan.trim(), tahapBaru: 'PILIH_MODE' };
+    return { teks: balasan.trim(), tahapBaru: 'PILIH_MODE', adaBasaBasi: !!pembuka };
 }
 
-// ---- Tangani jawaban saat tahap PILIH_MODE (kode, bukan AI) ----
+// ---- Tangani jawaban saat tahap PILIH_MODE (SELALU kode, TIDAK PERNAH AI) ----
 async function tanganiPilihMode(key, jid, teksAsli) {
     const p = ambilPercakapan(key);
     const t = teksAsli.toLowerCase().trim();
@@ -539,10 +569,22 @@ async function tanganiPilihMode(key, jid, teksAsli) {
         return { balas: balasan, pakaiAI: false, maksud: 'pesan', dicatat: true };
     }
 
-    // Pelanggan bilang "tanya" atau lainnya → tidak jadi, reset
-    resetPercakapan(key);
-    const balasan = `Oke, santai aja Kak 😊 Ada yang mau ditanyakan? Atau lihat menu di nayscake.vercel.app ya 🙏`;
-    return { balas: balasan, pakaiAI: false, maksud: 'batal_pesan' };
+    // Cek apakah pelanggan eksplisit batal/tanya/tidak jadi
+    if (/\b(tanya|batal|ga ?jadi|gak ?jadi|tidak ?jadi|nggak ?jadi|cancel|udah|gak|nggak|engga|enggak|tidak)\b/.test(t)) {
+        resetPercakapan(key);
+        const balasan = `Oke, santai aja Kak 😊 Ada yang mau ditanyakan? Atau lihat menu di nayscake.vercel.app ya 🙏`;
+        return { balas: balasan, pakaiAI: false, maksud: 'batal_pesan' };
+    }
+
+    // INPUT LAIN ("yang 2000 aja", "yg murah", angka, teks ngawur, dll.)
+    // TETAP di PILIH_MODE, minta perjelas dengan KODE. JANGAN ke AI.
+    const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
+    p.updatedAt = Date.now(); // refresh timeout
+    tandaiStateBerubah();
+    const balasan = `Maaf Kak, untuk pesanan ini:\n\n${ringkasan}\n\nMau diambil *sekarang* (ketik *beli*) atau *dipesan* untuk hari tertentu (ketik *pesan*)? 🙏`;
+    console.log(`[PILIH_MODE:ulang] ${jid}: input "${teksAsli.slice(0, 50)}" tidak dikenali, minta perjelas`);
+    logToFile('PILIH_MODE_ULANG', { jid, input: teksAsli.slice(0, 100) });
+    return { balas: balasan, pakaiAI: false, maksud: 'pilih_ulang' };
 }
 
 // Router utama non-AI. Mengembalikan {balas, pakaiAI}
@@ -554,7 +596,7 @@ async function jawabNonAI(teksAsli, jid, sapaanTetap, key) {
         case 'lokasi': return { balas: balasLokasi(), pakaiAI: false, maksud };
         case 'harga':  return { balas: balasHarga(teksAsli), pakaiAI: false, maksud };
         case 'pesan': {
-            const r = balasPesanPending(teksAsli, key);
+            const r = await balasPesanPending(teksAsli, key);
             return { balas: r.teks, pakaiAI: false, maksud, dicatat: false };
         }
         default: return { balas: null, pakaiAI: true, maksud };
