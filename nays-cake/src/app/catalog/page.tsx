@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { Search, Filter, MessageCircle, Package, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -54,10 +54,28 @@ export default function CatalogPage() {
   const itemsPerPage = 12;
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll();
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
-  const headerOpacity = useTransform(scrollY, [0, 100], [1, 0.95]);
-  const headerBlur = useTransform(scrollY, [0, 100], [0, 8]);
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const threshold = typeof window !== "undefined" && window.innerWidth < 768 ? 50 : 100;
+      
+      if (currentScrollY > lastScrollY.current && currentScrollY > threshold) {
+        // Scroll down - hide header
+        setIsHeaderVisible(false);
+      } else {
+        // Scroll up - show header
+        setIsHeaderVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     fetchProducts();
@@ -127,13 +145,12 @@ export default function CatalogPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50">
-      {/* Sticky Header with Scroll Effect */}
+      {/* Sticky Header - Hide on Scroll Down, Show on Scroll Up */}
       <motion.header
         ref={headerRef}
-        style={{
-          opacity: headerOpacity,
-          backdropFilter: `blur(${headerBlur}px)`,
-        }}
+        initial={false}
+        animate={{ y: isHeaderVisible ? 0 : -100 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
         className="bg-white/80 sticky top-0 z-50 shadow-md"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

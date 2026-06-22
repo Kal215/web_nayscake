@@ -142,7 +142,7 @@ export default function ProductsPage() {
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())
+    p.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
