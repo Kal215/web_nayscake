@@ -210,17 +210,20 @@ function simpanHistori(key, role, content) {
 }
 
 // ---- Percakapan pesanan (state machine per pelanggan) ----
+// Tahap: IDLE → PILIH_MODE → ISI_TANGGAL → KONFIRM_TANGGAL → PILIH_TOKO → KONFIRM_FINAL → IDLE
 const percakapan = new Map();
+const PERCAKAPAN_DEFAULT = () => ({
+    tahap: 'IDLE', itemPending: [], updatedAt: Date.now(),
+    tanggalRaw: null, tanggalParsed: null, toko: null, gagalTanggal: 0,
+});
 function ambilPercakapan(key) {
     if (!percakapan.has(key)) {
-        percakapan.set(key, { tahap: 'IDLE', itemPending: [], updatedAt: Date.now() });
+        percakapan.set(key, PERCAKAPAN_DEFAULT());
     }
     const p = percakapan.get(key);
     // Auto-reset jika idle terlalu lama
-    if (p.tahap !== 'IDLE' && (Date.now() - p.updatedAt) > CONFIG.PERCAKAPAN_TIMEOUT_MS) {
-        p.tahap = 'IDLE';
-        p.itemPending = [];
-        p.updatedAt = Date.now();
+    if (p.tahap !== 'IDLE' && (Date.now() - (p.updatedAt || 0)) > CONFIG.PERCAKAPAN_TIMEOUT_MS) {
+        Object.assign(p, PERCAKAPAN_DEFAULT());
         tandaiStateBerubah();
     }
     return p;
@@ -233,7 +236,45 @@ function setPercakapan(key, tahap, itemPending) {
     tandaiStateBerubah();
 }
 function resetPercakapan(key) {
-    setPercakapan(key, 'IDLE', []);
+    const p = ambilPercakapan(key);
+    Object.assign(p, PERCAKAPAN_DEFAULT());
+    tandaiStateBerubah();
+}
+
+// ---- Helper: format tanggal ISO → Indonesia (kode, bukan AI) ----
+const NAMA_HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const NAMA_BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function formatTanggalID(isoStr) {
+    try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        const hari = NAMA_HARI[d.getDay()];
+        const tgl = d.getDate();
+        const bln = NAMA_BULAN[d.getMonth()];
+        const thn = d.getFullYear();
+        const jam = String(d.getHours()).padStart(2,'0');
+        const menit = String(d.getMinutes()).padStart(2,'0');
+        return `${hari}, ${tgl} ${bln} ${thn}, jam ${jam}.${menit}`;
+    } catch { return isoStr; }
+}
+function isoKeDate(isoStr) {
+    try { const d = new Date(isoStr); return isNaN(d.getTime()) ? null : d; } catch { return null; }
+}
+function isHariIni(isoStr) {
+    const d = isoKeDate(isoStr);
+    if (!d) return false;
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+function isSudahLewat(isoStr) {
+    const d = isoKeDate(isoStr);
+    if (!d) return false;
+    const now = new Date(); now.setHours(0,0,0,0);
+    const cmp = new Date(d); cmp.setHours(0,0,0,0);
+    return cmp < now;
+}
+function namaTokoLengkap(kode) {
+    return kode === 'CABANG' ? 'Cabang (Rancapanggung)' : 'Toko Utama (Cililin)';
 }
 
 const spamWindow = new Map();
@@ -546,27 +587,14 @@ async function tanganiPilihMode(key, jid, teksAsli) {
         return { balas: balasan, pakaiAI: false, maksud: 'beli' };
     }
 
-    // Cek apakah pelanggan memilih PESAN
+    // Cek apakah pelanggan memilih PESAN → masuk alur tanggal (C2)
     if (/\bpesan\b/.test(t)) {
-        // Kirim pesanan ke website via pesanan.js (kode, bukan AI)
-        const itemUntukKirim = p.itemPending.map(i => ({
-            id: i.id, nama: i.nama, jumlah: i.jumlah,
-            harga: i.harga, subtotal: i.subtotal, pemasok: i.pemasok,
-        }));
-        const hasil = await pesananDB.tambah(jid, itemUntukKirim);
-        const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
-
-        let balasan = `📝 *Pesanan dicatat* (No. ${hasil.nomor})\n\n${ringkasan}\n\n`;
-        balasan += `Pesanan menunggu konfirmasi admin (ketersediaan & waktu ambil). Mohon ditunggu ya 🙏`;
-        if (hasil.sumber === 'WEB') {
-            balasan += `\n\n✅ Tersimpan di sistem website.`;
-        } else {
-            balasan += `\n\n⚠️ (Offline mode - akan sinkron nanti)`;
-        }
-        resetPercakapan(key);
-        console.log(`[PESAN] ${jid}: ${hasil.nomor} total ${hasil.total} (${hasil.sumber})`);
-        logToFile('PESAN_DICATAT', { jid, nomor: hasil.nomor, total: hasil.total, sumber: hasil.sumber });
-        return { balas: balasan, pakaiAI: false, maksud: 'pesan', dicatat: true };
+        setPercakapan(key, 'ISI_TANGGAL');
+        p.gagalTanggal = 0;
+        tandaiStateBerubah();
+        const balasan = `Siap, dicatat ya 😊 Mau diambil tanggal & jam berapa?\n(contoh: *25 Des jam 10*, atau *Jumat depan jam 8 pagi*)`;
+        console.log(`[PILIH_MODE→ISI_TANGGAL] ${jid}`);
+        return { balas: balasan, pakaiAI: false, maksud: 'isi_tanggal' };
     }
 
     // Cek apakah pelanggan eksplisit batal/tanya/tidak jadi
@@ -585,6 +613,239 @@ async function tanganiPilihMode(key, jid, teksAsli) {
     console.log(`[PILIH_MODE:ulang] ${jid}: input "${teksAsli.slice(0, 50)}" tidak dikenali, minta perjelas`);
     logToFile('PILIH_MODE_ULANG', { jid, input: teksAsli.slice(0, 100) });
     return { balas: balasan, pakaiAI: false, maksud: 'pilih_ulang' };
+}
+
+// =================================================================
+// HANDLER TAHAP ISI_TANGGAL (AI baca tanggal)
+// =================================================================
+async function tanganiIsiTanggal(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+
+    // Cek batal
+    if (/\b(batal|ga ?jadi|gak ?jadi|tidak ?jadi|cancel)\b/.test(t)) {
+        resetPercakapan(key);
+        return { balas: `Oke, pesanan dibatalkan. Kalau berubah pikiran, langsung bilang aja ya 😊`, pakaiAI: false, maksud: 'batal_tanggal' };
+    }
+
+    // Simpan teks asli sebagai cadangan
+    p.tanggalRaw = teksAsli;
+    p.updatedAt = Date.now();
+    tandaiStateBerubah();
+
+    // Panggil AI untuk parse tanggal
+    const hasil = await ai.bacaTanggal(teksAsli);
+
+    if (!hasil.valid || !hasil.iso) {
+        p.gagalTanggal = (p.gagalTanggal || 0) + 1;
+        tandaiStateBerubah();
+        // Jika sudah 2x gagal, lanjut dengan tanggalRaw saja
+        if (p.gagalTanggal >= 2) {
+            p.tanggalParsed = null; // tidak bisa parse, admin baca teks
+            setPercakapan(key, 'PILIH_TOKO');
+            // Langsung ke pilih toko
+            return tanganiPilihTokoAwal(key, jid);
+        }
+        return { balas: `Maaf, saya belum bisa membaca tanggalnya 🙏 Boleh tulis ulang? Contoh: *27 Des jam 8 pagi*, *besok jam 10*, atau *Jumat depan siang*`, pakaiAI: false, maksud: 'tanggal_ulang' };
+    }
+
+    // Cek tanggal sudah lewat
+    if (isSudahLewat(hasil.iso)) {
+        return { balas: `Hmm, tanggal itu sudah lewat ya Kak 😅 Boleh pilih tanggal yang lain?`, pakaiAI: false, maksud: 'tanggal_lewat' };
+    }
+
+    // Cek H-0 (hari ini)
+    if (isHariIni(hasil.iso)) {
+        // Simpan pesanan sebagai H-0 tapi arahkan ke admin
+        const itemUntukKirim = p.itemPending.map(i => ({
+            id: i.id, nama: i.nama, jumlah: i.jumlah,
+            harga: i.harga, subtotal: i.harga * i.jumlah, pemasok: i.pemasok,
+        }));
+        const hasilKirim = await pesananDB.tambah(jid, itemUntukKirim, {
+            orderType: 'PESANAN', pickupAt: hasil.iso, pickupRaw: teksAsli + ' (H-0)',
+            pickupLocation: null,
+        });
+        const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
+        let balasan = `Untuk hari ini, saya cek dulu ketersediaannya ke admin ya Kak 🙏\n\n${ringkasan}\n\nMohon tunggu konfirmasi admin.`;
+        if (hasilKirim.sumber === 'WEB') balasan += `\n\n✅ Permintaan tersimpan (No. ${hasilKirim.nomor}).`;
+        resetPercakapan(key);
+        console.log(`[PESAN-H0] ${jid}: ${hasilKirim.nomor}`);
+        logToFile('PESAN_H0', { jid, nomor: hasilKirim.nomor });
+        return { balas: balasan, pakaiAI: false, maksud: 'pesan_h0', dicatat: true };
+    }
+
+    // Tanggal valid, besok atau lebih → konfirmasi
+    p.tanggalParsed = hasil.iso;
+    setPercakapan(key, 'KONFIRM_TANGGAL');
+    const formatted = formatTanggalID(hasil.iso);
+    const balasan = `Oke, saya catat untuk:\n🗓️ *${formatted}*\n\nSudah benar? (ketik *ya* / *ubah*)`;
+    return { balas: balasan, pakaiAI: false, maksud: 'konfirm_tanggal' };
+}
+
+// =================================================================
+// HANDLER TAHAP KONFIRM_TANGGAL
+// =================================================================
+function tanganiKonfirmTanggal(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+
+    if (/\b(batal|ga ?jadi|gak ?jadi|cancel)\b/.test(t)) {
+        resetPercakapan(key);
+        return { balas: `Oke, pesanan dibatalkan 😊`, pakaiAI: false, maksud: 'batal_tanggal' };
+    }
+
+    if (/\b(ya|yaa?|yep|yup|iya|betul|benar|ok|oke|siap|lanjut|gas|bener|yoi)\b/.test(t)) {
+        setPercakapan(key, 'PILIH_TOKO');
+        return tanganiPilihTokoAwal(key, jid);
+    }
+
+    // Ubah / lainnya → kembali ke ISI_TANGGAL
+    setPercakapan(key, 'ISI_TANGGAL');
+    p.gagalTanggal = 0;
+    tandaiStateBerubah();
+    return { balas: `Oke, tulis ulang tanggal & jamnya ya 😊\n(contoh: *25 Des jam 10*, *besok jam 8 pagi*)`, pakaiAI: false, maksud: 'ubah_tanggal' };
+}
+
+// =================================================================
+// HANDLER TAHAP PILIH_TOKO (awal: tampilkan pilihan)
+// =================================================================
+function tanganiPilihTokoAwal(key, jid) {
+    const p = ambilPercakapan(key);
+    const totalPcs = p.itemPending.reduce((s, i) => s + i.jumlah, 0);
+
+    if (totalPcs > 300) {
+        // Otomatis UTAMA, jangan sebut angka 300
+        p.toko = 'UTAMA';
+        setPercakapan(key, 'KONFIRM_FINAL');
+        return tanganiKonfirmFinalAwal(key, jid);
+    }
+
+    // Beri pilihan
+    setPercakapan(key, 'PILIH_TOKO');
+    const balasan = `Mau diambil di toko yang mana, Kak?\n1️⃣ Toko Utama – Cililin (buka 06.00–18.00)\n2️⃣ Cabang – Rancapanggung (buka 07.00–12.00)\n\nKetik *1* atau *2* ya 🙏`;
+    return { balas: balasan, pakaiAI: false, maksud: 'pilih_toko' };
+}
+
+// =================================================================
+// HANDLER TAHAP PILIH_TOKO (jawaban pelanggan)
+// =================================================================
+function tanganiPilihToko(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+
+    if (/\b(batal|ga ?jadi|gak ?jadi|cancel)\b/.test(t)) {
+        resetPercakapan(key);
+        return { balas: `Oke, pesanan dibatalkan 😊`, pakaiAI: false, maksud: 'batal_toko' };
+    }
+
+    // Pilih 1 / utama / cililin
+    if (/^1$|\b(utama|cililin|satu)\b/.test(t)) {
+        p.toko = 'UTAMA';
+        setPercakapan(key, 'KONFIRM_FINAL');
+        return tanganiKonfirmFinalAwal(key, jid);
+    }
+
+    // Pilih 2 / cabang / rancapanggung
+    if (/^2$|\b(cabang|rancapanggung|dua)\b/.test(t)) {
+        // Cek jam ambil jika tanggalParsed tersedia
+        if (p.tanggalParsed) {
+            const d = isoKeDate(p.tanggalParsed);
+            if (d) {
+                const jam = d.getHours();
+                if (jam < 7 || jam >= 12) {
+                    // Di luar jam cabang → ingatkan
+                    p.toko = 'CABANG'; // simpan sementara
+                    setPercakapan(key, 'PILIH_TOKO'); // tetap di PILIH_TOKO
+                    p._saranUtama = true;
+                    tandaiStateBerubah();
+                    return { balas: `Cabang Rancapanggung buka 07.00–12.00 ya Kak. Untuk jam segitu, lebih pas diambil di Toko Utama (Cililin). Mau saya ganti ke Toko Utama? (ketik *ya* / *tidak*)`, pakaiAI: false, maksud: 'saran_utama' };
+                }
+            }
+        }
+        p.toko = 'CABANG';
+        setPercakapan(key, 'KONFIRM_FINAL');
+        return tanganiKonfirmFinalAwal(key, jid);
+    }
+
+    // Tanggapi saran utama (jika sedang disarankan)
+    if (p._saranUtama) {
+        delete p._saranUtama;
+        if (/\b(ya|yaa?|iya|ok|oke|ganti|utama)\b/.test(t)) {
+            p.toko = 'UTAMA';
+        }
+        // Jika 'tidak' → tetap cabang (sudah di-set sebelumnya)
+        setPercakapan(key, 'KONFIRM_FINAL');
+        return tanganiKonfirmFinalAwal(key, jid);
+    }
+
+    // Input tidak dikenal
+    return { balas: `Ketik *1* untuk Toko Utama (Cililin) atau *2* untuk Cabang (Rancapanggung) ya Kak 🙏`, pakaiAI: false, maksud: 'toko_ulang' };
+}
+
+// =================================================================
+// HANDLER TAHAP KONFIRM_FINAL (tampilkan ringkasan)
+// =================================================================
+function tanganiKonfirmFinalAwal(key, jid) {
+    const p = ambilPercakapan(key);
+    const { teks: ringkasan, total } = formatRingkasanItem(p.itemPending);
+    const tanggalStr = p.tanggalParsed ? formatTanggalID(p.tanggalParsed) : (p.tanggalRaw || '(akan dikonfirmasi admin)');
+    const tokoStr = namaTokoLengkap(p.toko);
+
+    let balasan = `Konfirmasi pesanan ya Kak 😊\n\n${ringkasan}\n\n🗓️ Ambil: *${tanggalStr}*\n📍 Di: *${tokoStr}*\n\nKetik *ya* untuk pesan, atau *batal*.`;
+
+    // Jika >300 pcs, tambah info alasan toko utama
+    const totalPcs = p.itemPending.reduce((s, i) => s + i.jumlah, 0);
+    if (totalPcs > 300) {
+        balasan = `Karena pesanannya cukup banyak, pengambilannya di Toko Utama (Cililin) ya Kak, biar lebih siap 🙏\n\n` + balasan;
+    }
+
+    setPercakapan(key, 'KONFIRM_FINAL');
+    return { balas: balasan, pakaiAI: false, maksud: 'konfirm_final' };
+}
+
+// =================================================================
+// HANDLER TAHAP KONFIRM_FINAL (jawaban pelanggan)
+// =================================================================
+async function tanganiKonfirmFinal(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+
+    if (/\b(batal|ga ?jadi|gak ?jadi|cancel|tidak)\b/.test(t)) {
+        resetPercakapan(key);
+        return { balas: `Oke, pesanan dibatalkan. Kalau berubah pikiran, langsung bilang aja ya 😊`, pakaiAI: false, maksud: 'batal_final' };
+    }
+
+    if (/\b(ya|yaa?|yep|yup|iya|ok|oke|siap|lanjut|gas|bener|yoi|confirm|setuju)\b/.test(t)) {
+        // KIRIM pesanan ke website via kode
+        const itemUntukKirim = p.itemPending.map(i => ({
+            id: i.id, nama: i.nama, jumlah: i.jumlah,
+            harga: i.harga, subtotal: i.harga * i.jumlah, pemasok: i.pemasok,
+        }));
+        const opsi = {
+            orderType: 'PESANAN',
+            pickupAt: p.tanggalParsed || null,
+            pickupRaw: p.tanggalRaw || null,
+            pickupLocation: p.toko || 'UTAMA',
+        };
+        const hasil = await pesananDB.tambah(jid, itemUntukKirim, opsi);
+        const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
+        const tanggalStr = p.tanggalParsed ? formatTanggalID(p.tanggalParsed) : (p.tanggalRaw || '-');
+        const tokoStr = namaTokoLengkap(p.toko);
+
+        let balasan = `Pesanan kamu sudah dicatat ✅ (No. *${hasil.nomor}*)\n\n${ringkasan}\n\n🗓️ Ambil: *${tanggalStr}*\n📍 Di: *${tokoStr}*\n\nPesanan menunggu konfirmasi admin. Terima kasih ya, ditunggu! 😊`;
+        if (hasil.sumber === 'WEB') {
+            balasan += `\n\n✅ Tersimpan di sistem website.`;
+        } else {
+            balasan += `\n\n⚠️ (Offline mode - akan sinkron nanti)`;
+        }
+        resetPercakapan(key);
+        console.log(`[PESAN] ${jid}: ${hasil.nomor} total ${hasil.total} (${hasil.sumber}) pickup=${tanggalStr} toko=${p.toko}`);
+        logToFile('PESAN_DICATAT', { jid, nomor: hasil.nomor, total: hasil.total, sumber: hasil.sumber, pickup: tanggalStr, toko: p.toko });
+        return { balas: balasan, pakaiAI: false, maksud: 'pesan', dicatat: true };
+    }
+
+    // Input tidak dikenal → tanya lagi
+    return { balas: `Ketik *ya* untuk konfirmasi pesanan, atau *batal* kalau mau cancel 🙏`, pakaiAI: false, maksud: 'konfirm_ulang' };
 }
 
 // Router utama non-AI. Mengembalikan {balas, pakaiAI}
@@ -873,15 +1134,25 @@ async function prosesGabungan(key, data) {
 
         // ---- LANGKAH 0: CEK TAHAP PERCAKAPAN (state machine) ----
         const percakapanState = ambilPercakapan(key);
-        if (percakapanState.tahap === 'PILIH_MODE') {
-            const hasil = await tanganiPilihMode(key, jid, gabunganTeks);
-            try { await sock.sendPresenceUpdate('paused', jid); } catch (_) {}
-            await botKirim(jid, denganPrefix(hasil.balas));
-            simpanHistori(key, 'user', gabunganTeks);
-            simpanHistori(key, 'assistant', hasil.balas);
-            console.log(`[PILIH_MODE:${hasil.maksud}] ${jid}`);
-            logToFile('OUT_PILIH_MODE', { ke: key, maksud: hasil.maksud, dicatat: !!hasil.dicatat });
-            return;
+        if (percakapanState.tahap !== 'IDLE') {
+            let hasil;
+            switch (percakapanState.tahap) {
+                case 'PILIH_MODE':      hasil = await tanganiPilihMode(key, jid, gabunganTeks); break;
+                case 'ISI_TANGGAL':     hasil = await tanganiIsiTanggal(key, jid, gabunganTeks); break;
+                case 'KONFIRM_TANGGAL': hasil = tanganiKonfirmTanggal(key, jid, gabunganTeks); break;
+                case 'PILIH_TOKO':      hasil = tanganiPilihToko(key, jid, gabunganTeks); break;
+                case 'KONFIRM_FINAL':   hasil = await tanganiKonfirmFinal(key, jid, gabunganTeks); break;
+                default: hasil = null; break;
+            }
+            if (hasil && hasil.balas) {
+                try { await sock.sendPresenceUpdate('paused', jid); } catch (_) {}
+                await botKirim(jid, denganPrefix(hasil.balas));
+                simpanHistori(key, 'user', gabunganTeks);
+                simpanHistori(key, 'assistant', hasil.balas);
+                console.log(`[${percakapanState.tahap}:${hasil.maksud}] ${jid}`);
+                logToFile('OUT_STATE', { ke: key, tahap: percakapanState.tahap, maksud: hasil.maksud, dicatat: !!hasil.dicatat });
+                return;
+            }
         }
 
         // ---- LANGKAH 1: COBA JAWAB TANPA AI (gratis & instan) ----

@@ -153,13 +153,13 @@ function penyediaAktif() {
     return URUTAN.filter(p => p.aktif()).map(p => p.nama);
 }
 
+const PROMPT_BASA_BASI = `Kamu asisten toko kue "Nay's Cake". Pelanggan mengirim pesan yang mengandung basa-basi/candaan/sapaan. Balas HANYA basa-basinya dengan 1 kalimat pendek, ramah, natural. JANGAN sebut pesanan/harga/total/nama kue. JANGAN menulis "Pesanan dicatat" atau nomor pesanan. Maksimal 12 kata. Contoh output: "Hehe bisa aja Kak 😄" atau "Wah kangen juga nih, seneng denger kabarnya 😊"`;
+
 // =================================================================
 // HELPER: basa-basi singkat (1 kalimat, hemat token)
 // Dipakai saat pesan pelanggan mengandung candaan/basa-basi + pesanan.
 // Mengembalikan string pendek atau null jika gagal (caller lanjut kode).
 // =================================================================
-const PROMPT_BASA_BASI = `Kamu asisten toko kue "Nay's Cake". Pelanggan mengirim pesan yang mengandung basa-basi/candaan/sapaan. Balas HANYA basa-basinya dengan 1 kalimat pendek, ramah, natural. JANGAN sebut pesanan/harga/total/nama kue. JANGAN menulis "Pesanan dicatat" atau nomor pesanan. Maksimal 12 kata. Contoh output: "Hehe bisa aja Kak 😄" atau "Wah kangen juga nih, seneng denger kabarnya 😊"`;
-
 async function sapaBasa(pesanPelanggan) {
     try {
         const hasil = await tanyaAI(PROMPT_BASA_BASI, [], pesanPelanggan);
@@ -175,4 +175,61 @@ async function sapaBasa(pesanPelanggan) {
     }
 }
 
-module.exports = { tanyaAI, penyediaAktif, sapaBasa };
+// =================================================================
+// HELPER: baca tanggal dari teks (HANYA untuk ISI_TANGGAL)
+// Mengembalikan { valid: boolean, iso: string|null, alasan: string }
+// Format ISO: "YYYY-MM-DDTHH:mm"
+// =================================================================
+function buatPromptTanggal(hariIni) {
+    return `Tanggal hari ini: ${hariIni}. Ubah teks tanggal pelanggan jadi JSON:
+{"iso":"YYYY-MM-DDTHH:mm","valid":true/false,"alasan":"penjelasan jika tidak valid"}.
+Format jam: HH:mm (24 jam). Jika jam tidak disebutkan, asumsikan jam 08:00.
+PENTING: 
+- "besok" = tanggal besok dari hari ini.
+- "lusa" = 2 hari dari hari ini.
+- "Jumat depan" = Jumat minggu depan.
+- Jika teks merujuk ke masa lalu, valid=false, alasan="tanggal sudah lewat".
+- Jika teks adalah HARI INI, tetap valid=true.
+- Balas HANYA JSON, tanpa teks lain, tanpa markdown.
+Teks:`;
+}
+
+async function bacaTanggal(teksTanggal) {
+    try {
+        const now = new Date();
+        const hariIni = now.toISOString().slice(0, 10); // YYYY-MM-DD
+        const prompt = buatPromptTanggal(hariIni);
+        
+        const hasil = await tanyaAI(prompt, [], teksTanggal);
+        const jsonStr = (hasil.content || '').trim();
+        
+        // Parse JSON dari respons
+        let data = null;
+        try {
+            data = JSON.parse(jsonStr);
+        } catch {
+            // Coba cari JSON dalam teks
+            const match = jsonStr.match(/\{[\s\S]*\}/);
+            if (match) {
+                try { data = JSON.parse(match[0]); } catch {}
+            }
+        }
+        
+        if (!data || typeof data.valid !== 'boolean') {
+            console.log(`[BACA_TANGGAL] Gagal parse JSON dari AI: ${jsonStr.slice(0, 100)}`);
+            return { valid: false, iso: null, alasan: 'Gagal membaca tanggal, coba tulis ulang' };
+        }
+        
+        console.log(`[BACA_TANGGAL:${hasil.penyedia}] "${teksTanggal}" → ${data.iso}, valid=${data.valid}`);
+        return {
+            valid: data.valid,
+            iso: data.valid ? data.iso : null,
+            alasan: data.alasan || ''
+        };
+    } catch (e) {
+        console.log(`[BACA_TANGGAL] Error: ${e.message}`);
+        return { valid: false, iso: null, alasan: 'Gagal membaca tanggal, coba tulis ulang' };
+    }
+}
+
+module.exports = { tanyaAI, penyediaAktif, sapaBasa, bacaTanggal };
