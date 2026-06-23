@@ -210,11 +210,18 @@ function simpanHistori(key, role, content) {
 }
 
 // ---- Percakapan pesanan (state machine per pelanggan) ----
-// Tahap: IDLE → PILIH_MODE → ISI_TANGGAL → KONFIRM_TANGGAL → PILIH_TOKO → KONFIRM_FINAL → IDLE
+// Tahap: IDLE → PILIH_VARIAN → PILIH_MODE → ISI_TANGGAL → KONFIRM_TANGGAL → PILIH_TOKO → KONFIRM_FINAL → IDLE
+// Tambahan C3: PILIH_VARIAN (A), KONFIRM_GANTI (B), TANYA_PREFERENSI + TAMPIL_REKOMENDASI (C)
 const percakapan = new Map();
 const PERCAKAPAN_DEFAULT = () => ({
     tahap: 'IDLE', itemPending: [], updatedAt: Date.now(),
     tanggalRaw: null, tanggalParsed: null, toko: null, gagalTanggal: 0,
+    // C3-A: varian pending
+    varianPending: null, // { namaDasar, jumlah, opsi: [{id, nama, harga, pemasok}], teksAsli }
+    // C3-B: ganti pesanan
+    tahapSebelumnya: null, itemBaru: null,
+    // C3-C: rekomendasi
+    konteksRekomendasi: null, // { budget, jumlah, teks }
 });
 function ambilPercakapan(key) {
     if (!percakapan.has(key)) {
@@ -506,6 +513,7 @@ function adaBasaBasi(teks) {
 
 // ---- Balas pesanan: SIMPAN ke pending, tanya beli/pesan (TIDAK langsung kirim) ----
 // Sekarang async karena bisa panggil AI untuk basa-basi (opsional)
+// C3-A: Handle varian dengan state PILIH_VARIAN
 async function balasPesanPending(teksAsli, key) {
     const { items, gagal } = toko.parsePesanan(teksAsli);
     const ok = items.filter(i => i.status === 'ok');
@@ -525,13 +533,46 @@ async function balasPesanPending(teksAsli, key) {
             teks += `\nMau yang mana? 🙂\n\n`;
         }
     }
+    
+    // C3-A: Tangani varian dengan state PILIH_VARIAN
     if (varian.length) {
-        for (const it of varian) {
-            teks += `Untuk "${it.teksAsli}", ada beberapa varian harga:\n`;
+        // Hanya tangani 1 varian sekaligus untuk kesederhanaan
+        const it = varian[0];
+        const namaUnik = [...new Set(it.kandidat.map(k => k.nama))];
+        
+        if (namaUnik.length === 1) {
+            // Nama sama, beda supplier/harga → simpan ke varianPending
+            const p = ambilPercakapan(key);
+            p.varianPending = {
+                namaDasar: namaUnik[0],
+                jumlah: it.jumlah,
+                opsi: it.kandidat.map((k, idx) => ({
+                    id: k.id,
+                    nama: k.nama,
+                    harga: k.harga,
+                    pemasok: k.pemasok || '-',
+                    urutan: idx + 1,
+                })),
+                teksAsli: it.teksAsli,
+            };
+            setPercakapan(key, 'PILIH_VARIAN');
+            
+            // Format dengan nomor untuk memudahkan pilihan
+            teks += `*${namaUnik[0]}* ada ${it.kandidat.length} pilihan ya Kak:\n`;
+            it.kandidat.forEach((k, idx) => {
+                teks += `${idx + 1}. ${k.pemasok || 'Standar'} – ${rupiah(k.harga)}\n`;
+            });
+            teks += `\nKetik angka (1/${it.kandidat.length}), atau sebut harga/suppliernya 🙂`;
+            
+            return { teks: teks.trim(), tahapBaru: 'PILIH_VARIAN' };
+        } else {
+            // Nama beda → tampilkan semua
+            teks += `Untuk "${it.teksAsli}", ada beberapa varian:\n`;
             teks += it.kandidat.map(k => `• ${k.nama} (${k.pemasok}) — ${rupiah(k.harga)}`).join('\n');
-            teks += `\nMau yang mana? 🙂\n\n`;
+            teks += `\n\nMau yang mana? 🙂\n\n`;
         }
     }
+    
     // Jika ada item yang belum jelas, jangan masuk PILIH_MODE — minta pilih dulu
     if (!ok.length) {
         return { teks: teks.trim(), tahapBaru: null };
@@ -613,6 +654,241 @@ async function tanganiPilihMode(key, jid, teksAsli) {
     console.log(`[PILIH_MODE:ulang] ${jid}: input "${teksAsli.slice(0, 50)}" tidak dikenali, minta perjelas`);
     logToFile('PILIH_MODE_ULANG', { jid, input: teksAsli.slice(0, 100) });
     return { balas: balasan, pakaiAI: false, maksud: 'pilih_ulang' };
+}
+
+// =================================================================
+// C3-A: HANDLER TAHAP PILIH_VARIAN
+// =================================================================
+function tanganiPilihVarian(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+    
+    if (!p.varianPending || !p.varianPending.opsi) {
+        // State error, reset
+        resetPercakapan(key);
+        return { balas: `Maaf terjadi kesalahan. Boleh sebut ulang pesanannya ya 🙏`, pakaiAI: false, maksud: 'varian_error' };
+    }
+    
+    const opsi = p.varianPending.opsi;
+    let pilihan = null;
+    
+    // Cek batal
+    if (/\b(batal|ga ?jadi|gak ?jadi|cancel)\b/.test(t)) {
+        resetPercakapan(key);
+        return { balas: `Oke, dibatalkan ya 😊`, pakaiAI: false, maksud: 'varian_batal' };
+    }
+    
+    // Cocokkan dengan angka urutan (1, 2, 3...)
+    const matchAngka = t.match(/^(\d+)$/);
+    if (matchAngka) {
+        const idx = parseInt(matchAngka[1], 10) - 1;
+        if (idx >= 0 && idx < opsi.length) {
+            pilihan = opsi[idx];
+        }
+    }
+    
+    // Cocokkan dengan harga ("2000", "yang 2000", "rp2000", "rp 3.000")
+    if (!pilihan) {
+        const matchHarga = teksAsli.match(/(\d[\d\.,]*)/);
+        if (matchHarga) {
+            const angka = matchHarga[1].replace(/[^\d]/g, '');
+            const hargaCari = parseInt(angka, 10);
+            const cocok = opsi.filter(o => o.harga === hargaCari);
+            if (cocok.length === 1) pilihan = cocok[0];
+        }
+    }
+    
+    // Cocokkan dengan supplier/pemasok ("ade boy", "adeboy", "mas yanto")
+    if (!pilihan) {
+        const norm = toko.normalisasi(teksAsli);
+        for (const o of opsi) {
+            const normSupp = toko.normalisasi(o.pemasok);
+            if (normSupp && norm.includes(normSupp)) {
+                pilihan = o;
+                break;
+            }
+            // Coba tanpa spasi
+            const normSuppNoSpace = normSupp.replace(/\s/g, '');
+            const normNoSpace = norm.replace(/\s/g, '');
+            if (normSuppNoSpace && normNoSpace.includes(normSuppNoSpace)) {
+                pilihan = o;
+                break;
+            }
+        }
+    }
+    
+    // Jika berhasil pilih → set itemPending dan lanjut ke PILIH_MODE
+    if (pilihan) {
+        p.itemPending = [{
+            id: pilihan.id,
+            nama: pilihan.nama,
+            harga: pilihan.harga,
+            jumlah: p.varianPending.jumlah,
+            pemasok: pilihan.pemasok,
+            subtotal: pilihan.harga * p.varianPending.jumlah,
+        }];
+        p.varianPending = null;
+        setPercakapan(key, 'PILIH_MODE');
+        
+        const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
+        const balasan = `Oke, saya catat:\n\n${ringkasan}\n\nMau diambil sekarang (ketik *beli*) atau dipesan untuk hari tertentu (ketik *pesan*)? 😊`;
+        console.log(`[PILIH_VARIAN→PILIH_MODE] ${jid}: ${pilihan.nama}`);
+        return { balas: balasan, pakaiAI: false, maksud: 'varian_ok' };
+    }
+    
+    // Tidak cocok → minta perjelas
+    p.updatedAt = Date.now();
+    tandaiStateBerubah();
+    let balasan = `Maksudnya yang mana ya Kak? `;
+    balasan += opsi.map((o, idx) => `Ketik *${idx + 1}* untuk ${o.pemasok} (${rupiah(o.harga)})`).join(', atau ');
+    balasan += ` 🙏`;
+    console.log(`[PILIH_VARIAN:ulang] ${jid}: "${teksAsli.slice(0, 50)}" tidak cocok`);
+    return { balas: balasan, pakaiAI: false, maksud: 'varian_ulang' };
+}
+
+// =================================================================
+// C3-B: HANDLER TAHAP KONFIRM_GANTI
+// =================================================================
+async function tanganiKonfirmGanti(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    const t = teksAsli.toLowerCase().trim();
+    
+    if (!p.itemBaru || !p.tahapSebelumnya) {
+        resetPercakapan(key);
+        return { balas: `Maaf terjadi kesalahan. Boleh sebut ulang pesanannya ya 🙏`, pakaiAI: false, maksud: 'ganti_error' };
+    }
+    
+    // Pilih GANTI
+    if (/\b(ganti|ubah|ya|yaa?|iya|ok|oke|baru|yang baru)\b/.test(t)) {
+        // Buang state lama, mulai dengan itemBaru
+        const itemBaru = p.itemBaru;
+        resetPercakapan(key);
+        
+        const r = await balasPesanPending(itemBaru.teksAsli, key);
+        console.log(`[KONFIRM_GANTI→GANTI] ${jid}`);
+        return { balas: r.teks, pakaiAI: false, maksud: 'ganti_ok' };
+    }
+    
+    // Pilih LANJUT
+    if (/\b(lanjut|lanjutkan|tidak|gak|nggak|tetap|yang tadi)\b/.test(t)) {
+        // Kembali ke tahap sebelumnya
+        const tahapKembali = p.tahapSebelumnya;
+        p.itemBaru = null;
+        p.tahapSebelumnya = null;
+        setPercakapan(key, tahapKembali);
+        tandaiStateBerubah();
+        
+        // Ulangi pertanyaan tahap sebelumnya
+        let balasan = '';
+        switch (tahapKembali) {
+            case 'PILIH_MODE':
+                const { teks: ringkasan } = formatRingkasanItem(p.itemPending);
+                balasan = `Oke, lanjut pesanan yang tadi ya:\n\n${ringkasan}\n\nMau diambil *sekarang* (ketik *beli*) atau *dipesan* (ketik *pesan*)? 😊`;
+                break;
+            case 'ISI_TANGGAL':
+                balasan = `Oke, lanjut ya. Mau diambil tanggal & jam berapa?\n(contoh: *25 Des jam 10*)`;
+                break;
+            case 'KONFIRM_TANGGAL':
+                const formatted = formatTanggalID(p.tanggalParsed);
+                balasan = `Oke, lanjut ya. Tadi sampai:\n🗓️ *${formatted}*\n\nSudah benar? (ketik *ya* / *ubah*)`;
+                break;
+            case 'PILIH_TOKO':
+                balasan = `Oke, lanjut ya. Mau diambil di toko yang mana?\n1️⃣ Toko Utama – Cililin\n2️⃣ Cabang – Rancapanggung\n\nKetik *1* atau *2* ya 🙏`;
+                break;
+            case 'KONFIRM_FINAL':
+                return tanganiKonfirmFinalAwal(key, jid);
+            case 'PILIH_VARIAN':
+                if (p.varianPending) {
+                    balasan = `Oke, lanjut pilih varian ya. ${p.varianPending.namaDasar} yang mana?\n`;
+                    p.varianPending.opsi.forEach((o, idx) => {
+                        balasan += `${idx + 1}. ${o.pemasok} – ${rupiah(o.harga)}\n`;
+                    });
+                    balasan += `Ketik angka atau sebut harganya 🙂`;
+                } else {
+                    balasan = `Oke, lanjut ya 😊`;
+                }
+                break;
+            default:
+                balasan = `Oke, lanjut pesanan yang tadi ya 😊`;
+        }
+        console.log(`[KONFIRM_GANTI→LANJUT] ${jid}: kembali ke ${tahapKembali}`);
+        return { balas: balasan, pakaiAI: false, maksud: 'ganti_lanjut' };
+    }
+    
+    // Input tidak jelas
+    p.updatedAt = Date.now();
+    tandaiStateBerubah();
+    const balasan = `Ketik *ganti* untuk pesanan baru, atau *lanjut* untuk lanjutkan yang tadi ya Kak 🙏`;
+    return { balas: balasan, pakaiAI: false, maksud: 'ganti_ulang' };
+}
+
+// =================================================================
+// C3-C: HANDLER TAHAP TANYA_PREFERENSI (untuk rekomendasi)
+// =================================================================
+async function tanganiTanyaPreferensi(key, jid, teksAsli) {
+    const p = ambilPercakapan(key);
+    
+    const preferensi = toko.deteksiPreferensi(teksAsli);
+    
+    if (!preferensi) {
+        // Tidak terdeteksi, minta perjelas
+        p.updatedAt = Date.now();
+        tandaiStateBerubah();
+        return { balas: `Maaf Kak, sukanya yang manis atau gurih ya? Biar saya bisa kasih rekomendasi yang pas 😊`, pakaiAI: false, maksud: 'preferensi_ulang' };
+    }
+    
+    // Preferensi terdeteksi → panggil AI rekomendasi
+    setPercakapan(key, 'TAMPIL_REKOMENDASI');
+    
+    const produkSemua = toko.getProduk();
+    let produkFilter = produkSemua;
+    
+    // Filter berdasarkan preferensi (kasar, bisa diperbaiki)
+    if (preferensi === 'manis') {
+        const kataManis = /bolu|lapis|talam|nagasari|dadar|puding|sus|brownies|cake|putu|kue/i;
+        produkFilter = produkSemua.filter(p => kataManis.test(p.nama));
+    } else if (preferensi === 'gurih') {
+        const kataGurih = /risol|lemper|dimsum|pastel|lumpia|tahu|bakso|mie|ayam|gorengan/i;
+        produkFilter = produkSemua.filter(p => kataGurih.test(p.nama));
+    }
+    
+    // Jika filter kosong, pakai semua
+    if (produkFilter.length === 0) produkFilter = produkSemua;
+    
+    // Ambil max 20 produk untuk dikirim ke AI
+    const produkUntukAI = produkFilter.slice(0, 20);
+    
+    const konteks = p.konteksRekomendasi ? p.konteksRekomendasi.teks : teksAsli;
+    
+    try {
+        const rekomendasi = await ai.rekomendasiProduk(produkUntukAI, preferensi, konteks);
+        
+        if (!rekomendasi) {
+            // AI gagal/melanggar → kasih balasan kode
+            let balasan = `Untuk ${preferensi === 'campur' ? 'campur manis-gurih' : preferensi}, ini beberapa pilihan:\n\n`;
+            balasan += produkUntukAI.slice(0, 6).map(p => `• ${p.nama} – ${rupiah(p.harga)}`).join('\n');
+            balasan += `\n\nKalau mau pesan, tinggal sebut nama dan jumlahnya ya Kak 😊\n\n📋 Menu lengkap: nayscake.vercel.app`;
+            resetPercakapan(key);
+            console.log(`[REKOMENDASI:fallback] ${jid}`);
+            return { balas: balasan, pakaiAI: false, maksud: 'rekomendasi' };
+        }
+        
+        let balasan = rekomendasi;
+        balasan += `\n\n📋 Menu lengkap: nayscake.vercel.app`;
+        resetPercakapan(key);
+        console.log(`[REKOMENDASI:AI] ${jid}: preferensi=${preferensi}`);
+        logToFile('REKOMENDASI', { jid, preferensi, produkCount: produkUntukAI.length });
+        return { balas: balasan, pakaiAI: false, maksud: 'rekomendasi' };
+        
+    } catch (e) {
+        console.error('[REKOMENDASI] Error:', e.message);
+        // Fallback manual
+        let balasan = `Untuk ${preferensi === 'campur' ? 'campur manis-gurih' : preferensi}, ini beberapa pilihan:\n\n`;
+        balasan += produkUntukAI.slice(0, 6).map(p => `• ${p.nama} – ${rupiah(p.harga)}`).join('\n');
+        balasan += `\n\nKalau mau pesan, tinggal sebut nama dan jumlahnya ya 😊\n\n📋 Menu lengkap: nayscake.vercel.app`;
+        resetPercakapan(key);
+        return { balas: balasan, pakaiAI: false, maksud: 'rekomendasi_fallback' };
+    }
 }
 
 // =================================================================
@@ -859,6 +1135,13 @@ async function jawabNonAI(teksAsli, jid, sapaanTetap, key) {
         case 'pesan': {
             const r = await balasPesanPending(teksAsli, key);
             return { balas: r.teks, pakaiAI: false, maksud, dicatat: false };
+        }
+        case 'rekomendasi': { // C3-C
+            const p = ambilPercakapan(key);
+            p.konteksRekomendasi = { teks: teksAsli };
+            setPercakapan(key, 'TANYA_PREFERENSI');
+            const balasan = `Siap Kak! Kira-kira suka yang manis (kue basah, bolu) atau gurih (gorengan, risol, lemper)? Biar saya bantu pilihkan 😊`;
+            return { balas: balasan, pakaiAI: false, maksud };
         }
         default: return { balas: null, pakaiAI: true, maksud };
     }
@@ -1135,13 +1418,66 @@ async function prosesGabungan(key, data) {
         // ---- LANGKAH 0: CEK TAHAP PERCAKAPAN (state machine) ----
         const percakapanState = ambilPercakapan(key);
         if (percakapanState.tahap !== 'IDLE') {
+            // C3-B: Deteksi ganti pesanan (kecuali di KONFIRM_GANTI dan TANYA_PREFERENSI)
+            const tahapBisaGanti = ['PILIH_MODE', 'ISI_TANGGAL', 'KONFIRM_TANGGAL', 'PILIH_TOKO', 'KONFIRM_FINAL', 'PILIH_VARIAN'];
+            if (tahapBisaGanti.includes(percakapanState.tahap)) {
+                const produkBaru = toko.deteksiProdukBaru(gabunganTeks);
+                if (produkBaru && produkBaru.items.length > 0) {
+                    // Terdeteksi pesanan baru → tanya ganti atau lanjut
+                    const okBaru = produkBaru.items.filter(i => i.status === 'ok');
+                    if (okBaru.length > 0) {
+                        // Simpan state untuk konfirmasi
+                        percakapanState.tahapSebelumnya = percakapanState.tahap;
+                        percakapanState.itemBaru = { items: okBaru, teksAsli: gabunganTeks };
+                        setPercakapan(key, 'KONFIRM_GANTI');
+                        
+                        // Format ringkasan lama dan baru
+                        const itemLama = percakapanState.itemPending || [];
+                        const itemBaruPending = okBaru.map(i => ({
+                            nama: i.nama, harga: i.harga, jumlah: i.jumlah,
+                        }));
+                        
+                        let balasan = `Kakak punya pesanan yang sedang diproses:\n`;
+                        if (itemLama.length > 0) {
+                            const { teks: ringkasanLama } = formatRingkasanItem(itemLama);
+                            balasan += ringkasanLama;
+                        } else {
+                            balasan += `(di tahap ${percakapanState.tahapSebelumnya})`;
+                        }
+                        
+                        balasan += `\n\nMau ganti ke pesanan baru:\n`;
+                        const { teks: ringkasanBaru } = formatRingkasanItem(itemBaruPending);
+                        balasan += ringkasanBaru;
+                        balasan += `\n\natau lanjutkan yang tadi?\n\nKetik *ganti* atau *lanjut* ya 🙏`;
+                        
+                        try { await sock.sendPresenceUpdate('paused', jid); } catch (_) {}
+                        await botKirim(jid, denganPrefix(balasan));
+                        simpanHistori(key, 'user', gabunganTeks);
+                        simpanHistori(key, 'assistant', balasan);
+                        console.log(`[DETEKSI_GANTI] ${jid}: dari ${percakapanState.tahapSebelumnya}`);
+                        logToFile('DETEKSI_GANTI', { jid, dari: percakapanState.tahapSebelumnya });
+                        return;
+                    }
+                }
+            }
+            
+            // Handler normal per tahap
             let hasil;
             switch (percakapanState.tahap) {
                 case 'PILIH_MODE':      hasil = await tanganiPilihMode(key, jid, gabunganTeks); break;
+                case 'PILIH_VARIAN':    hasil = tanganiPilihVarian(key, jid, gabunganTeks); break; // C3-A
                 case 'ISI_TANGGAL':     hasil = await tanganiIsiTanggal(key, jid, gabunganTeks); break;
                 case 'KONFIRM_TANGGAL': hasil = tanganiKonfirmTanggal(key, jid, gabunganTeks); break;
                 case 'PILIH_TOKO':      hasil = tanganiPilihToko(key, jid, gabunganTeks); break;
                 case 'KONFIRM_FINAL':   hasil = await tanganiKonfirmFinal(key, jid, gabunganTeks); break;
+                case 'KONFIRM_GANTI':   hasil = await tanganiKonfirmGanti(key, jid, gabunganTeks); break; // C3-B
+                case 'TANYA_PREFERENSI': hasil = await tanganiTanyaPreferensi(key, jid, gabunganTeks); break; // C3-C
+                case 'TAMPIL_REKOMENDASI': 
+                    // Setelah rekomendasi ditampilkan, kembali ke IDLE
+                    // Pesan berikutnya diproses normal
+                    resetPercakapan(key);
+                    hasil = null;
+                    break;
                 default: hasil = null; break;
             }
             if (hasil && hasil.balas) {

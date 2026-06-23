@@ -232,4 +232,65 @@ async function bacaTanggal(teksTanggal) {
     }
 }
 
-module.exports = { tanyaAI, penyediaAktif, sapaBasa, bacaTanggal };
+// =================================================================
+// HELPER: rekomendasi produk sesuai budget/jumlah
+// Dipanggil setelah pelanggan sebut budget/jumlah dan pilih jenis (manis/gurih).
+// LARANGAN: AI hanya menyarankan produk, JANGAN hitung total, JANGAN buat pesanan.
+// =================================================================
+const PROMPT_REKOMENDASI = `Kamu asisten toko kue "Nay's Cake". Pelanggan minta rekomendasi produk.
+
+ATURAN MUTLAK:
+- Sarankan 2-4 produk yang relevan dari daftar yang diberikan.
+- Tulis NAMA produk dan HARGA SATUAN saja.
+- JANGAN menghitung total harga.
+- JANGAN menulis "Pesanan dicatat", "NAY-xxxx", atau angka total.
+- JANGAN bertanya "mau berapa" atau "mau pesan".
+- Tulis singkat, ramah, dalam 1-2 kalimat pembuka + daftar produk.
+
+Format balasan:
+"[kalimat pembuka ramah]
+
+• [Nama Produk 1] – Rp[harga satuan]
+• [Nama Produk 2] – Rp[harga satuan]
+...
+
+[kalimat penutup singkat]"
+
+Contoh output baik:
+"Untuk arisan gurih, ini beberapa pilihan enak nih 😊
+
+• Risol Mayo (Mas Yanto) – Rp3.000
+• Lemper Ayam – Rp3.500
+• Dimsum – Rp2.500
+
+Kalau Kakak mau pesan, tinggal sebut nama dan jumlahnya ya!"
+
+Daftar produk toko:`;
+
+async function rekomendasiProduk(daftarProduk, preferensi, konteks) {
+    try {
+        // Format daftar produk: nama, harga, supplier
+        const produkStr = daftarProduk
+            .map(p => `• ${p.nama}${p.pemasok ? ` (${p.pemasok})` : ''} – Rp${p.harga.toLocaleString('id-ID')}`)
+            .join('\n');
+        
+        const prompt = `${PROMPT_REKOMENDASI}\n\n${produkStr}\n\nPreferensi pelanggan: ${preferensi}\nKonteks tambahan: ${konteks}`;
+        
+        const hasil = await tanyaAI(prompt, [], `Berikan rekomendasi untuk: ${konteks}`);
+        const teks = (hasil.content || '').trim();
+        
+        // Tolak jika mengandung kata terlarang
+        if (/pesanan dicatat|NAY-|total.*Rp\d+|sudah dicatat/i.test(teks)) {
+            console.log('[REKOMENDASI] AI melanggar aturan, tolak');
+            return null;
+        }
+        
+        console.log(`[REKOMENDASI:${hasil.penyedia}] preferensi="${preferensi}"`);
+        return teks;
+    } catch (e) {
+        console.log(`[REKOMENDASI] Gagal (${e.message})`);
+        return null;
+    }
+}
+
+module.exports = { tanyaAI, penyediaAktif, sapaBasa, bacaTanggal, rekomendasiProduk };

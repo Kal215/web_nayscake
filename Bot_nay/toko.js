@@ -256,7 +256,7 @@ function hitungTotal(items) {
 // DETEKSI MAKSUD (INTENT) — menentukan apakah perlu Gemini atau tidak
 // =================================================================
 // Mengembalikan salah satu: 'pesan', 'harga', 'menu', 'lokasi',
-// 'sapaan', atau 'lainnya' (yang ini baru diserahkan ke Gemini).
+// 'sapaan', 'rekomendasi', atau 'lainnya' (yang ini baru diserahkan ke Gemini).
 function deteksiMaksud(teks) {
     const t = normalisasi(teks);
     if (!t) return 'sapaan';
@@ -271,6 +271,15 @@ function deteksiMaksud(teks) {
     if (/\b(lokasi|alamat|dimana|di mana|maps|map|tempat|toko)\b/.test(t)) return 'lokasi';
     // minta daftar menu
     if (/\b(menu|daftar|list|jual apa|ada apa|katalog|produk)\b/.test(t)) return 'menu';
+
+    // ---- DETEKSI REKOMENDASI (C3) ----
+    // Budget: "punya 50rb", "budget 100ribu", "duit 200rb"
+    // Jumlah tanpa produk: "mau 50 pcs", "buat 50 orang", "butuh 30 biji"
+    // Minta saran: "enaknya pesan apa", "rekomendasi dong", "saran kue", "kue apa yang enak"
+    const adaBudget = /\b(budget|punya|duit|modal|uang)\s*\d+\s*(rb|ribu|k)/i.test(teks);
+    const adaJumlahTanpaProduk = /\b(mau|butuh|buat|untuk)\s*\d+\s*(pcs?|buah|biji|orang|porsi|item)/i.test(teks);
+    const mintaSaran = /\b(enaknya|rekomendasi|saran|bagusnya|pilihan|apa yang enak|apa ya|mau pesan apa|kue apa)\b/i.test(t);
+    if (adaBudget || adaJumlahTanpaProduk || mintaSaran) return 'rekomendasi';
 
     // ---- GUARD: kata kunci non-harga → lempar ke AI, jangan tangkap sebagai harga ----
     const KATA_KUNCI_KE_AI = /\b(tahan|berapa lama|basi|awet|halal|kandungan|alergi|kacang|gluten|pengawet|sehat|bisa di|kenapa|kok|apakah|expired|kadaluarsa|kadaluwarsa|komposisi|bahan|simpan|disimpan)\b/;
@@ -293,6 +302,43 @@ function deteksiMaksud(teks) {
     return 'lainnya';   // → biar Gemini yang jawab
 }
 
+// =================================================================
+// DETEKSI PRODUK BARU (untuk BAGIAN B - ganti pesanan)
+// Cek apakah teks mengandung pesanan produk baru yang valid.
+// Mengembalikan { items, gagal } jika valid, atau null jika bukan pesanan.
+// =================================================================
+function deteksiProdukBaru(teks) {
+    const t = normalisasi(teks);
+    if (!t) return null;
+    
+    // Jika tidak ada angka, kemungkinan bukan pesanan
+    if (!/\d/.test(t)) return null;
+    
+    const { items, gagal } = parsePesanan(teks);
+    
+    // Harus ada minimal 1 item valid
+    const okItems = items.filter(i => i.status === 'ok' || i.status === 'ambigu' || i.status === 'pilih');
+    if (okItems.length === 0) return null;
+    
+    return { items, gagal };
+}
+
+// =================================================================
+// DETEKSI PREFERENSI JENIS KUE (manis/gurih) untuk rekomendasi
+// =================================================================
+function deteksiPreferensi(teks) {
+    const t = normalisasi(teks);
+    
+    const manis = /\b(manis|kue basah|bolu|cake|brownis|lapis|talam|nagasari|lemper manis|kue lapis|dadar|kue bolu|puding|es krim|coklat|cokelat|vanila|keju|pisang|sus)\b/i;
+    const gurih = /\b(gurih|gorengan|risol|lemper|dimsum|pastel|lumpia|tahu|tempe|bakso|mie|ayam|daging|udang|bakar|pangsit|siomay)\b/i;
+    
+    if (manis.test(teks) && !gurih.test(teks)) return 'manis';
+    if (gurih.test(teks) && !manis.test(teks)) return 'gurih';
+    if (manis.test(teks) && gurih.test(teks)) return 'campur';
+    
+    return null; // tidak terdeteksi
+}
+
 // ---- Getter untuk sumber cache ----
 function getSumberCache() {
     return CACHE_SUMBER;
@@ -312,4 +358,6 @@ module.exports = {
     parsePesanan,
     hitungTotal,
     deteksiMaksud,
+    deteksiProdukBaru,
+    deteksiPreferensi,
 };
