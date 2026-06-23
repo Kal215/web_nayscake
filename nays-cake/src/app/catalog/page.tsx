@@ -135,10 +135,11 @@ export default function CatalogPage() {
   const getCategoryDisplay = (category: string) => categoryDisplay[category] || { emoji: "🍽️", label: category };
 
   return (
-    <div ref={containerRef} className="flex flex-col lg:flex-row min-h-screen">
-      {/* Sidebar Fixed Background - Sticky with Slideshow */}
-      <div className="w-full lg:w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen z-30">
-        <div className="absolute inset-0 overflow-hidden">
+    <div ref={containerRef} className="min-h-screen">
+      {/* Mobile/Tablet Sidebar - Show at top */}
+      <div className="lg:hidden">
+        {/* Background Image for Mobile */}
+        <div className="relative h-48 sm:h-56 overflow-hidden">
           {sidebarImages.map((img, index) => (
             <motion.div
               key={img}
@@ -156,17 +157,73 @@ export default function CatalogPage() {
               />
             </motion.div>
           ))}
-          {/* Overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/80 to-white/70" />
+        </div>
+        
+        {/* Mobile Sidebar Content */}
+        <div className="bg-white shadow-lg p-4 mx-4 -mt-8 rounded-2xl relative z-10 mb-4">
+          <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-full transition-colors text-xs mb-3">
+            <ArrowLeft className="w-3 h-3" /><span>Kembali</span>
+          </Link>
+          <h1 className="text-lg font-bold text-gray-900 mb-2">Katalog Produk</h1>
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input type="text" placeholder="Cari produk..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-medium text-gray-700 mb-1">Kategori</label>
+              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
+                <option value="">Semua</option>
+                {categories.map((cat) => <option key={cat} value={cat}>{getCategoryDisplay(cat).emoji} {getCategoryDisplay(cat).label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-gray-700 mb-1">Supplier</label>
+              <select value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
+                <option value="">Semua</option>
+                {suppliers.map((sup) => <option key={sup.id} value={sup.name}>{sup.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="mt-2">
+            <label className="block text-[10px] font-medium text-gray-700 mb-1">💰 Harga: Rp {priceRange[0].toLocaleString("id-ID")} - Rp {priceRange[1].toLocaleString("id-ID")}</label>
+            <input type="range" min="1000" max="20000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1 bg-gray-200 rounded-lg accent-amber-500" />
+            <input type="range" min="1000" max="20000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1 bg-gray-200 rounded-lg accent-amber-500 mt-1" />
+          </div>
+          <p className="text-[10px] text-gray-600 mt-2">Menampilkan <span className="font-bold text-amber-600">{products.length}</span> produk</p>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar - Fixed with Slideshow */}
+      <div className="hidden lg:block w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen z-30">
+        <div className="absolute inset-0 overflow-hidden rounded-3xl">
+          {sidebarImages.map((img, index) => (
+            <motion.div
+              key={img}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: index === currentImageIndex ? 1 : 0 }}
+              transition={{ duration: 1 }}
+            >
+              <Image
+                src={img}
+                alt={`Sidebar Background ${index + 1}`}
+                fill
+                className="object-cover"
+                priority={index === 0}
+              />
+            </motion.div>
+          ))}
           <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/80 to-white/70" />
         </div>
       </div>
 
-      {/* Sidebar Content - Parallax Moving */}
+      {/* Desktop Sidebar Content - Parallax Moving */}
       <motion.aside 
         style={mounted ? { y: smoothSidebarY } : {}}
-        className="w-full lg:w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen p-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4 z-40"
+        className="hidden lg:block w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen p-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4 z-40"
       >
-        {/* Sidebar Content */}
         <div className="relative bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-4 sm:p-6">
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-full transition-colors text-sm mb-4">
             <ArrowLeft className="w-4 h-4" /><span>Kembali</span>
@@ -217,7 +274,7 @@ export default function CatalogPage() {
       </motion.aside>
 
       {/* Products Area */}
-      <main className="flex-1 lg:ml-80 xl:ml-96">
+      <main className="lg:ml-80 xl:ml-96">
         {/* Parallax Header */}
         <div ref={parallaxRef} className="relative overflow-hidden">
           <img src="/catalog-bg.jpg" alt="Catalog Background" className="absolute inset-0 w-full h-full object-cover" />
