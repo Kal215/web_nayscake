@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { Search, Filter, MessageCircle, Package, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
+import { Search, Filter, MessageCircle, Package, ChevronLeft, ChevronRight, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -42,8 +42,31 @@ const categoryDisplay: Record<string, { emoji: string; label: string }> = {
 
 const sidebarImages = ["/sidebar-1.jpg", "/sidebar-2.jpg", "/sidebar-3.jpg", "/sidebar-4.jpg", "/sidebar-5.jpg"];
 
+function ProductImage({ src, alt, sizes }: { src: string; alt: string; sizes?: string }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [imgSrc, setImgSrc] = useState(src);
+  return (
+    <div className="relative w-full h-full">
+      {isLoading && <div className="absolute inset-0 bg-amber-200/50 animate-pulse z-10" />}
+      <Image
+        src={imgSrc}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className={`object-cover transition-opacity duration-700 ease-in-out ${isLoading ? "opacity-0" : "opacity-100"}`}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setImgSrc("/gambar.jpg");
+          setIsLoading(false);
+        }}
+      />
+    </div>
+  );
+}
+
 export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
@@ -152,6 +175,7 @@ export default function CatalogPage() {
                 src={img}
                 alt={`Sidebar Background ${index + 1}`}
                 fill
+                sizes="(max-width: 1024px) 100vw, 33vw"
                 className="object-cover"
                 priority={index === 0}
               />
@@ -210,6 +234,7 @@ export default function CatalogPage() {
                 src={img}
                 alt={`Sidebar Background ${index + 1}`}
                 fill
+                sizes="(max-width: 1024px) 100vw, 33vw"
                 className="object-cover"
                 priority={index === 0}
               />
@@ -308,12 +333,12 @@ export default function CatalogPage() {
                   const stockStatus = getStockStatus(product.stock, product.minStock);
                   const catDisplay = getCategoryDisplay(product.category);
                   return (
-                    <motion.div key={product.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -5, boxShadow: "0 20px 40px -15px rgba(251, 146, 60, 0.3)" }} className="bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group">
+                    <motion.div key={product.id} onClick={() => setSelectedProduct(product)} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -5, boxShadow: "0 20px 40px -15px rgba(251, 146, 60, 0.3)" }} className="bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group cursor-pointer">
                       <div className="relative aspect-[4/3] sm:aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                         {product.imageUrl ? (
-                          <div className="relative w-full h-full"><Image src={product.imageUrl} alt={product.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" /></div>
+                          <ProductImage src={product.imageUrl} alt={product.name} sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" />
                         ) : (
-                          <div className="relative w-full h-full"><Image src="/gambar.jpg" alt="Kue Segar" fill className="object-cover" sizes="(max-width: 640px) 100vw" /></div>
+                          <ProductImage src="/gambar.jpg" alt="Kue Segar" sizes="(max-width: 640px) 100vw" />
                         )}
                         <motion.div className="absolute top-2 right-2 sm:top-3 sm:right-3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + index * 0.02 }}>
                           <span className={`px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium rounded-full ${stockStatus.class}`}>{stockStatus.label}</span>
@@ -331,7 +356,7 @@ export default function CatalogPage() {
                         <motion.h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-0.5 sm:mb-1 group-hover:text-amber-600 transition-colors line-clamp-1 sm:line-clamp-none" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{product.name}</motion.h3>
                         <motion.p className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2 line-clamp-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{product.supplier}</motion.p>
                         <motion.div className="text-lg sm:text-xl md:text-2xl font-bold text-amber-600 mb-1 sm:mb-2" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}>Rp {product.sellingPrice.toLocaleString("id-ID")}</motion.div>
-                        <motion.a href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}`} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 min-h-[44px] ${product.isAvailable ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}>
+                        <motion.a onClick={(e) => e.stopPropagation()} href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}`} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 min-h-[44px] ${product.isAvailable ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}>
                           <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" /><span>{product.isAvailable ? "Pesan via WhatsApp" : "Stok Habis"}</span>
                         </motion.a>
                       </div>
@@ -352,6 +377,95 @@ export default function CatalogPage() {
           )}
         </div>
       </main>
+
+      {/* Product Modal */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProduct(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-white rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 z-10 p-2 bg-white/80 hover:bg-white text-gray-600 rounded-full backdrop-blur-md transition-colors shadow-sm"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="relative aspect-[4/3] w-full bg-amber-50">
+                {selectedProduct.imageUrl ? (
+                  <ProductImage src={selectedProduct.imageUrl} alt={selectedProduct.name} sizes="(max-width: 640px) 100vw, 500px" />
+                ) : (
+                  <ProductImage src="/gambar.jpg" alt="Kue Segar" sizes="(max-width: 640px) 100vw, 500px" />
+                )}
+                <div className="absolute top-4 left-4">
+                  <span className="px-3 py-1.5 text-sm font-medium bg-white/90 text-gray-700 rounded-full backdrop-blur-sm shadow-sm">
+                    {getCategoryDisplay(selectedProduct.category).emoji} {getCategoryDisplay(selectedProduct.category).label}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6 overflow-y-auto">
+                <div className="flex justify-between items-start mb-4 gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedProduct.name}</h2>
+                    <p className="text-gray-500 font-medium">Mitra: {selectedProduct.supplier}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-2xl font-bold text-amber-600">Rp {selectedProduct.sellingPrice.toLocaleString("id-ID")}</div>
+                    <span className={`inline-block mt-2 px-2.5 py-1 text-xs font-medium rounded-full ${getStockStatus(selectedProduct.stock, selectedProduct.minStock).class}`}>
+                      {getStockStatus(selectedProduct.stock, selectedProduct.minStock).label}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 rounded-2xl p-4 mb-6">
+                  <h4 className="text-sm font-semibold text-amber-900 mb-2">Informasi Produk</h4>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex justify-between border-b border-amber-200/50 pb-2">
+                      <span>Kategori</span>
+                      <span className="font-medium">{selectedProduct.category}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-amber-200/50 pb-2">
+                      <span>Sisa Stok</span>
+                      <span className="font-medium">{selectedProduct.stock} porsi</span>
+                    </div>
+                    <div className="flex justify-between pb-1">
+                      <span>Supplier</span>
+                      <span className="font-medium">{selectedProduct.supplier}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(selectedProduct.name)}%20dari%20${encodeURIComponent(selectedProduct.supplier)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-base transition-all duration-300 shadow-lg ${
+                    selectedProduct.isAvailable 
+                      ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-green-500/30 hover:-translate-y-0.5" 
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>{selectedProduct.isAvailable ? "Pesan Sekarang via WhatsApp" : "Maaf, Stok Habis"}</span>
+                </a>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
