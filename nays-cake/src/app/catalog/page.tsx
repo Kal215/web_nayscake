@@ -40,6 +40,8 @@ const categoryDisplay: Record<string, { emoji: string; label: string }> = {
   "Menu Spesial": { emoji: "🍕", label: "Menu Spesial" },
 };
 
+const sidebarImages = ["/sidebar-1.jpg", "/sidebar-2.jpg", "/sidebar-3.jpg", "/sidebar-4.jpg", "/sidebar-5.jpg"];
+
 export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -49,17 +51,24 @@ export default function CatalogPage() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [priceRange, setPriceRange] = useState<[number, number]>([500, 15000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([1000, 20000]);
   const [currentPage, setCurrentPage] = useState(1);
   const [mounted, setMounted] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const itemsPerPage = 12;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Scroll tracking for parallax sidebar - only initialize after mount
+
+  // Slideshow for sidebar background
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % sidebarImages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Scroll tracking for parallax sidebar
   const { scrollYProgress } = useScroll();
-  
-  // Parallax effect for sidebar - moves slower than scroll
   const sidebarY = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const smoothSidebarY = useSpring(sidebarY, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
@@ -127,12 +136,38 @@ export default function CatalogPage() {
 
   return (
     <div ref={containerRef} className="flex flex-col lg:flex-row min-h-screen">
-      {/* Sidebar - Parallax Following */}
+      {/* Sidebar Fixed Background - Sticky with Slideshow */}
+      <div className="w-full lg:w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen z-30">
+        <div className="absolute inset-0 overflow-hidden">
+          {sidebarImages.map((img, index) => (
+            <motion.div
+              key={img}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: index === currentImageIndex ? 1 : 0 }}
+              transition={{ duration: 1 }}
+            >
+              <Image
+                src={img}
+                alt={`Sidebar Background ${index + 1}`}
+                fill
+                className="object-cover"
+                priority={index === 0}
+              />
+            </motion.div>
+          ))}
+          {/* Overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/80 to-white/70" />
+        </div>
+      </div>
+
+      {/* Sidebar Content - Parallax Moving */}
       <motion.aside 
         style={mounted ? { y: smoothSidebarY } : {}}
         className="w-full lg:w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen p-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4 z-40"
       >
-        <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-3xl p-4 sm:p-6">
+        {/* Sidebar Content */}
+        <div className="relative bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-4 sm:p-6">
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-full transition-colors text-sm mb-4">
             <ArrowLeft className="w-4 h-4" /><span>Kembali</span>
           </Link>
@@ -170,9 +205,9 @@ export default function CatalogPage() {
           <div className="mb-3">
             <label className="block text-xs font-medium text-gray-700 mb-1">💰 Harga: Rp {priceRange[0].toLocaleString("id-ID")} - Rp {priceRange[1].toLocaleString("id-ID")}</label>
             <div className="space-y-2">
-              <input type="range" min="500" max="15000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
-              <input type="range" min="500" max="15000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
-              <div className="flex justify-between text-[10px] text-gray-500"><span>Rp 500</span><span>Rp 15.000</span></div>
+              <input type="range" min="1000" max="20000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+              <input type="range" min="1000" max="20000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+              <div className="flex justify-between text-[10px] text-gray-500"><span>Rp 1.000</span><span>Rp 20.000</span></div>
             </div>
           </div>
           <div className="p-3 bg-amber-50 rounded-xl">
