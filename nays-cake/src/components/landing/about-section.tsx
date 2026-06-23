@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 
 export function AboutSection() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-16 sm:py-20 lg:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Left - Image */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -15,17 +15,17 @@ export function AboutSection() {
             transition={{ duration: 0.8 }}
             className="relative"
           >
-            <div className="aspect-square rounded-3xl bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <span className="text-8xl">🎂</span>
-                  <p className="text-amber-600 font-semibold mt-4">Fresh Every Day</p>
-                </div>
-              </div>
+            <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl relative">
+              {/* Menggunakan img tag untuk auto-refresh saat file di public berubah */}
+              <img
+                src="/b.jpeg"
+                alt="Fresh Every Day"
+                className="w-full h-full object-cover"
+              />
             </div>
             {/* Decorative elements */}
-            <div className="absolute -top-4 -left-4 w-24 h-24 bg-amber-200 rounded-2xl -z-10" />
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-orange-200 rounded-2xl -z-10" />
+            <div className="absolute -top-4 -left-4 w-20 h-20 sm:w-24 sm:h-24 bg-amber-200 rounded-2xl -z-10" />
+            <div className="absolute -bottom-4 -right-4 w-28 h-28 sm:w-32 sm:h-32 bg-orange-200 rounded-2xl -z-10" />
           </motion.div>
 
           {/* Right - Content */}
