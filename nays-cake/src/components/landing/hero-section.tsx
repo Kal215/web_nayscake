@@ -38,7 +38,7 @@ export function HeroSection() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-amber-200">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-gray-700">Toko Kue Basah Segar Setiap Hari</span>
+            <span className="text-sm font-medium text-gray-700">Toko Aneka Jajanan & Kue Basah</span>
           </span>
         </motion.div>
 
@@ -61,7 +61,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-4 max-w-2xl mx-auto leading-relaxed"
         >
-          Kue Basah Segar Setiap Hari
+          Sajian Lezat untuk Setiap Momen Anda
         </motion.p>
 
         <motion.p
@@ -70,7 +70,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="text-base sm:text-lg text-gray-500 mb-10 max-w-xl mx-auto"
         >
-          Puluhan pilihan kue tradisional dan modern dengan kualitas terbaik dari supplier terpercaya
+          Puluhan pilihan kue tradisional dan modern dengan kualitas terbaik, dikirim langsung dari supplier terpercaya setiap hari.
         </motion.p>
 
         {/* CTA Buttons */}

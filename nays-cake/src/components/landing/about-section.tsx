@@ -39,18 +39,18 @@ export function AboutSection() {
               Tentang Kami
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mt-4 mb-6">
-              Kue Segar Langsung dari <span className="text-amber-600">Supplier Terpercaya</span>
+              Lebih dari Sekadar <span className="text-amber-600">Kue Basah</span>
             </h2>
             <div className="space-y-6 text-gray-600">
               <p className="text-lg leading-relaxed">
-                Nay's Cake hadir untuk memberikan pilihan kue basah segar dan berkualitas untuk setiap momen spesial Anda. Dengan lebih dari 77 varian kue dari 29 supplier terpercaya, kami memastikan setiap produk Fresh dari supplier langsung ke meja Anda.
+                Dari lemper, risoles, pastel, hingga aneka bolu dan puding, Nay's Cake menghadirkan beragam pilihan makanan ringan berkualitas untuk menemani setiap momen. Diproduksi setiap hari dan dipasok oleh mitra terpercaya untuk menjaga kesegaran serta cita rasa terbaik.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 py-6">
                 {[
-                  { icon: "🌿", title: "Bahan Segar", desc: "Langsung dari supplier setiap pagi" },
-                  { icon: "🤝", title: "Supplier Terpercaya", desc: "29 supplier berpengalaman" },
-                  { icon: "⏰", title: "Fresh Every Day", desc: "Diproduksi setiap hari" },
-                  { icon: "💯", title: "Kualitas terjamin", desc: "Seleksi ketat sebelum jual" },
+                  { icon: "🌿", title: "Selalu Fresh", desc: "Diproduksi dan dikirim setiap hari" },
+                  { icon: "🤝", title: "Supplier Pilihan", desc: "Bermitra dengan puluhan supplier terpercaya" },
+                  { icon: "🚚", title: "Siap untuk Berbagai Acara", desc: "Arisan, rapat, syukuran, ulang tahun, dan lainnya" },
+                  { icon: "💯", title: "Kualitas Terjaga", desc: "Produk diseleksi sebelum sampai ke pelanggan" },
                 ].map((item, index) => (
                   <div key={index} className="flex gap-4">
                     <span className="text-3xl">{item.icon}</span>
