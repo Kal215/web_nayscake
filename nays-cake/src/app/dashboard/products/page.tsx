@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Package, Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, ImagePlus, X, Save } from "lucide-react";
 import Image from "next/image";
 import { CldUploadWidget } from "next-cloudinary";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 interface Supplier {
   id: string;
@@ -17,7 +18,7 @@ interface Product {
   category: string | null;
   costPrice: number;
   sellingPrice: number;
-  supplier: { name: string };
+  supplier: string;
   supplierId: string;
   imageUrl: string | null;
 }
@@ -50,7 +51,7 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/products?internal=1");
       const data = await res.json();
       setProducts(data.products || []);
       setSuppliers(data.suppliers || []);
@@ -140,12 +141,10 @@ export default function ProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => {
-    const productName = p.name || "";
-    const supplierName = typeof p.supplier === 'string' ? p.supplier : (p.supplier?.name || "");
-    return productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           supplierName.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice(
@@ -165,6 +164,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TombolKembali />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Manajemen Produk</h1>
@@ -240,7 +240,7 @@ export default function ProductsPage() {
                           <span className="font-medium text-gray-900">{product.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{product.supplier.name}</td>
+                      <td className="px-6 py-4 text-gray-600">{product.supplier}</td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                           {product.category || "Tanpa Kategori"}

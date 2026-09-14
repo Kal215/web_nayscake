@@ -25,7 +25,7 @@ const defaultProducts: Product[] = [
 ];
 
 export function ProductsSection({ initialProducts }: ProductsSectionProps) {
-  const products = initialProducts && initialProducts.length > 0 ? initialProducts : defaultProducts;
+  const products = initialProducts || [];
 
   return (
     <section className="py-24 bg-gradient-to-b from-amber-50/50 to-white">

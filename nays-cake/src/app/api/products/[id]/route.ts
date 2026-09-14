@@ -1,67 +1,35 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { apiError, ApiError, requireAdmin } from "@/lib/api";
+import { audit, transaction } from "@/lib/business";
+import { productInput } from "@/lib/validation";
 
-// PUT /api/products/[id] - Update a product
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const user = await requireAdmin();
     const { id } = await params;
-    const body = await request.json();
-    const { name, costPrice, sellingPrice, category, supplierId, imageUrl } = body;
-
-    // Validate required fields
-    if (!name || !costPrice || !sellingPrice || !supplierId) {
-      return NextResponse.json(
-        { error: "Name, cost price, selling price, and supplier are required" },
-        { status: 400 }
-      );
-    }
-
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name,
-        costPrice,
-        sellingPrice,
-        category,
-        supplierId,
-        imageUrl,
-      },
-      include: {
-        supplier: true,
-      },
+    const data = productInput.parse(await request.json());
+    const product = await transaction(async tx => {
+      const existing = await tx.product.findUnique({ where: { id }, include: { _count: { select: { stockEntries: true, saleItems: true, orderItems: true } } } });
+      if (!existing) throw new ApiError(404, "Produk tidak ditemukan");
+      if (existing.supplierId !== data.supplierId && (existing._count.stockEntries || existing._count.saleItems || existing._count.orderItems)) throw new ApiError(409, "Produk memiliki riwayat transaksi. Buat produk baru untuk pemasok yang berbeda.");
+      const supplier = await tx.supplier.findUnique({ where: { id: data.supplierId } });
+      if (!supplier?.isActive) throw new ApiError(400, "Pemasok tidak tersedia");
+      const p = await tx.product.update({ where: { id }, data: { ...data, imageUrl: data.imageUrl || null }, include: { supplier: true } });
+      await audit(tx, user.id, "PRODUCT_UPDATED", id);
+      return p;
     });
-
     return NextResponse.json(product);
-  } catch (error) {
-    console.error("Update product error:", error);
-    return NextResponse.json(
-      { error: "Failed to update product" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return apiError(error); }
 }
 
-// DELETE /api/products/[id] - Delete a product
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const user = await requireAdmin(true);
     const { id } = await params;
-
-    await prisma.product.delete({
-      where: { id },
+    await transaction(async tx => {
+      await tx.product.update({ where: { id }, data: { isActive: false } });
+      await audit(tx, user.id, "PRODUCT_ARCHIVED", id);
     });
-
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Delete product error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete product" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return apiError(error); }
 }

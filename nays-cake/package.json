@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test tests/operations.test.cjs tests/migration.test.cjs",
+    "test:bot": "node --test tests/bot.test.cjs tests/ai.test.cjs",
+    "test:all": "node --test tests/*.test.cjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -38,6 +41,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.4.1",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",

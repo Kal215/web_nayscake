@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, Plus, Search, Edit, Trash2, Phone, MapPin, Loader2 } from "lucide-react";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 interface Supplier {
   id: string;
@@ -52,6 +53,7 @@ export default function SupplierPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TombolKembali />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Manajemen Supplier</h1>

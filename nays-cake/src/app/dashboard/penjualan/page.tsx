@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, Plus, Minus, Trash2, Loader2, Calendar, TrendingUp } from "lucide-react";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
 
 interface Product {
   id: string;
@@ -10,7 +11,7 @@ interface Product {
   sellingPrice: number;
   costPrice: number;
   category: string | null;
-  supplier: { name: string };
+  supplier: string;
 }
 
 interface Sale {
@@ -26,6 +27,12 @@ export default function PenjualanPage() {
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [cart, setCart] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const saleKey = useRef<string | null>(null);
+  const pendingSale = useRef<{ requestKey: string; items: { productId: string; quantity: number }[] } | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [customerName, setCustomerName] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -34,25 +41,29 @@ export default function PenjualanPage() {
   const fetchData = async () => {
     try {
       const [productsRes, salesRes] = await Promise.all([
-        fetch("/api/products"),
+        fetch("/api/products?internal=1"),
         fetch("/api/sales?limit=10")
       ]);
       const productsData = await productsRes.json();
       const salesData = await salesRes.json();
+      if (!productsRes.ok || !salesRes.ok) throw new Error(productsData.error || salesData.error || "Gagal memuat data");
       setProducts(productsData.products || []);
       setRecentSales(salesData.sales || []);
     } catch (error) {
       console.error("Failed to fetch data:", error);
+      setError(error instanceof Error ? error.message : "Gagal memuat data");
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = (id: string) => {
+    if (saving || pendingSale.current) return;
     setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   };
 
   const removeFromCart = (id: string) => {
+    if (saving || pendingSale.current) return;
     setCart(prev => {
       if (prev[id] <= 1) {
         const newCart = { ...prev };
@@ -63,7 +74,25 @@ export default function PenjualanPage() {
     });
   };
 
-  const clearCart = () => setCart({});
+  const clearCart = () => { if (!saving && !pendingSale.current) setCart({}); };
+
+  const saveSale = async () => {
+    if (saving || !Object.keys(cart).length) return;
+    setSaving(true); setError("");
+    saleKey.current ||= crypto.randomUUID();
+    pendingSale.current ||= { requestKey: saleKey.current, items: Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity })) };
+    try {
+      const res = await fetch("/api/sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...pendingSale.current, paymentMethod, customerName }) });
+      const body = await res.json();
+      if (!res.ok) {
+        if (res.status < 500) { pendingSale.current = null; saleKey.current = null; }
+        throw new Error(body.error || "Gagal menyimpan transaksi");
+      }
+      pendingSale.current = null; saleKey.current = null; setCart({}); setCustomerName("");
+      await fetchData();
+    } catch (e) { setError(e instanceof Error ? e.message : "Gagal menyimpan. Coba lagi dengan transaksi yang sama."); }
+    finally { setSaving(false); }
+  };
 
   const cartProducts = products.filter(p => cart[p.id]);
   const totalAmount = cartProducts.reduce((sum, p) => sum + (Number(p.sellingPrice) * (cart[p.id] || 0)), 0);
@@ -81,6 +110,7 @@ export default function PenjualanPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TombolKembali />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Transaksi Penjualan</h1>
@@ -91,6 +121,7 @@ export default function PenjualanPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Product List */}
           <div className="lg:col-span-2">
@@ -101,7 +132,7 @@ export default function PenjualanPage() {
                   <div key={product.id} className="p-4 border rounded-xl hover:border-amber-500 transition-colors cursor-pointer" onClick={() => addToCart(product.id)}>
                     <div className="flex flex-col mb-2">
                       <span className="font-medium text-sm">{product.name}</span>
-                      <span className="text-xs text-gray-500">{product.supplier.name}</span>
+                      <span className="text-xs text-gray-500">{product.supplier}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-green-600 text-sm">Rp {Number(product.sellingPrice).toLocaleString("id-ID")}</span>
@@ -167,8 +198,10 @@ export default function PenjualanPage() {
                       <span className="text-gray-500">Keuntungan</span>
                       <span className="font-medium text-amber-600">Rp {totalProfit.toLocaleString("id-ID")}</span>
                     </div>
-                    <button className="w-full py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg mt-2">
-                      Simpan Transaksi
+                    <label className="block text-sm">Pelanggan<input value={customerName} disabled={saving} onChange={e => setCustomerName(e.target.value)} maxLength={150} className="block w-full border rounded-lg p-2 mt-1" /></label>
+                    <label className="block text-sm">Pembayaran<select value={paymentMethod} disabled={saving} onChange={e => setPaymentMethod(e.target.value)} className="block w-full border rounded-lg p-2 mt-1"><option value="cash">Tunai</option><option value="transfer">Transfer</option></select></label>
+                    <button onClick={saveSale} disabled={saving} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg mt-2 disabled:opacity-50">
+                      {saving ? "Menyimpan..." : "Simpan Transaksi"}
                     </button>
                   </div>
                 </>

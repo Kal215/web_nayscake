@@ -1,0 +1,386 @@
+"use client";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ClipboardList,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Phone,
+  User,
+  Loader2,
+  Package,
+  AlertCircle,
+  CalendarClock,
+  MapPin
+} from "lucide-react";
+import { Sidebar } from "@/components/dashboard/sidebar";
+import { TombolKembali } from "@/components/dashboard/TombolKembali";
+
+type OrderStatus = "MENUNGGU" | "DIKONFIRMASI" | "SELESAI" | "DIBATALKAN";
+
+interface OrderItem {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  subtotal: number;
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  customerPhone: string | null;
+  customerName: string | null;
+  totalAmount: number;
+  status: OrderStatus;
+  source: string;
+  notes: string | null;
+  orderType?: string | null;
+  pickupAt?: string | null;
+  pickupRaw?: string | null;
+  pickupLocation?: string | null;
+  createdAt: string;
+  items: OrderItem[];
+}
+
+function formatRupiah(num: number): string {
+  return num.toLocaleString("id-ID");
+}
+
+function formatTanggal(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const statusConfig: Record<OrderStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
+  MENUNGGU: { label: "Menunggu", color: "text-yellow-600", bgColor: "bg-yellow-100", icon: Clock },
+  DIKONFIRMASI: { label: "Dikonfirmasi", color: "text-blue-600", bgColor: "bg-blue-100", icon: CheckCircle },
+  SELESAI: { label: "Selesai", color: "text-green-600", bgColor: "bg-green-100", icon: CheckCircle },
+  DIBATALKAN: { label: "Dibatalkan", color: "text-red-600", bgColor: "bg-red-100", icon: XCircle },
+};
+
+const tabs: { status: OrderStatus | "SEMUA"; label: string }[] = [
+  { status: "SEMUA", label: "Semua" },
+  { status: "MENUNGGU", label: "Menunggu" },
+  { status: "DIKONFIRMASI", label: "Dikonfirmasi" },
+  { status: "SELESAI", label: "Selesai" },
+  { status: "DIBATALKAN", label: "Dibatalkan" },
+];
+
+export default function PesananPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<OrderStatus | "SEMUA">("SEMUA");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [history, setHistory] = useState<Record<string, { id: string; action: string; details: string | null; createdAt: string }[]>>({});
+  const loadHistory = async (id: string) => {
+    try {
+      const res = await fetch("/api/orders/" + id);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error);
+      setHistory(current => ({ ...current, [id]: body.history }));
+    } catch (e) { setError(e instanceof Error ? e.message : "Gagal memuat riwayat"); }
+  };
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const url = activeTab === "SEMUA" 
+        ? "/api/orders" 
+        : `/api/orders?status=${activeTab}`;
+      const res = await fetch(url + (url.includes("?") ? "&" : "?") + new URLSearchParams({ search, page: String(page) }));
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memuat pesanan");
+      setOrders(data.orders || []);
+      setHasMore(!!data.hasMore);
+      setError("");
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+      setError(error instanceof Error ? error.message : "Gagal memuat pesanan");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, search, page]);
+
+  useEffect(() => {
+    fetchOrders();
+    const timer = setInterval(fetchOrders, 15000);
+    return () => clearInterval(timer);
+  }, [fetchOrders]);
+
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    if (newStatus === "SELESAI" && !confirm("Pesanan sudah diambil dan pembayaran sudah diterima?")) return;
+    setUpdatingId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus, paid: newStatus === "SELESAI" }),
+      });
+      
+      if (res.ok) {
+        fetchOrders();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Gagal mengubah status");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      alert("Terjadi kesalahan");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const getActions = (order: Order) => {
+    switch (order.status) {
+      case "MENUNGGU":
+        return (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleStatusChange(order.id, "DIKONFIRMASI")}
+              disabled={updatingId === order.id}
+              className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50"
+            >
+              {updatingId === order.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4" />
+              )}
+              Konfirmasi
+            </button>
+            <button
+              onClick={() => handleStatusChange(order.id, "DIBATALKAN")}
+              disabled={updatingId === order.id}
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 disabled:opacity-50"
+            >
+              <XCircle className="w-4 h-4" />
+              Batal
+            </button>
+          </div>
+        );
+      case "DIKONFIRMASI":
+        return (
+          <button
+            onClick={() => handleStatusChange(order.id, "SELESAI")}
+            disabled={updatingId === order.id}
+            className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 disabled:opacity-50"
+          >
+            {updatingId === order.id ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CheckCircle className="w-4 h-4" />
+            )}
+            Tandai Selesai
+          </button>
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (loading) {
+    return (
+      <Sidebar>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+        </div>
+      </Sidebar>
+    );
+  }
+
+  return (
+    <Sidebar>
+      <div className="max-w-7xl mx-auto">
+        <TombolKembali />
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 hidden lg:block">Pesanan Masuk</h1>
+          <p className="text-sm text-gray-600 hidden lg:block">
+            Kelola pesanan dari WhatsApp bot
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <label className="block text-sm mb-4">Cari pesanan<input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Nomor pesanan, nama, atau telepon" className="block border rounded-lg p-2 mt-1 w-full max-w-md" /></label>
+        <div className="flex items-center gap-3 mb-4"><button title="Halaman sebelumnya" aria-label="Halaman sebelumnya" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 border rounded-lg disabled:opacity-40"><ChevronLeft size={18} /></button><span className="text-sm">Halaman {page}</span><button title="Halaman berikutnya" aria-label="Halaman berikutnya" disabled={!hasMore} onClick={() => setPage(p => p + 1)} className="p-2 border rounded-lg disabled:opacity-40"><ChevronRight size={18} /></button></div>
+        {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {tabs.map((tab) => {
+            const count = tab.status === "SEMUA" 
+              ? orders.length 
+              : orders.filter(o => o.status === tab.status).length;
+            
+            return (
+              <button
+                key={tab.status}
+                onClick={() => { setActiveTab(tab.status); setPage(1); }}
+                className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-colors ${
+                  activeTab === tab.status
+                    ? "bg-amber-500 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                    activeTab === tab.status ? "bg-amber-600" : "bg-gray-200"
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Orders List */}
+        {orders.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center">
+            <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Belum ada pesanan</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <AnimatePresence mode="popLayout">
+              {orders.map((order, index) => {
+                const config = statusConfig[order.status];
+                const StatusIcon = config.icon;
+                
+                return (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white rounded-2xl p-6 shadow-sm"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 text-base break-all">{order.orderNumber}</p>
+                        <p className="text-sm text-gray-500">{formatTanggal(order.createdAt)}</p>
+                      </div>
+                      <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} ${config.color}`}>
+                        <StatusIcon className="w-4 h-4" />
+                        {config.label}
+                      </span>
+                    </div>
+
+                    {/* Customer Info */}
+                    <details className="text-sm mb-4" onToggle={e => { if (e.currentTarget.open) void loadHistory(order.id); }}><summary className="cursor-pointer text-gray-600">Riwayat pesanan</summary>{history[order.id]?.map(event => <p key={event.id} className="mt-2 break-words">{formatTanggal(event.createdAt)}: {event.details || ({ ORDER_CREATED: "Pesanan dibuat", ORDER_STATUS: "Status berubah" }[event.action] || event.action)}</p>)}</details>
+                    <div className="flex flex-wrap gap-4 mb-4 text-sm">
+                      {order.customerName && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <User className="w-4 h-4" />
+                          {order.customerName}
+                        </div>
+                      )}
+                      {order.customerPhone && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Phone className="w-4 h-4" />
+                          {order.customerPhone}
+                        </div>
+                      )}
+                      {order.orderType && (
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          order.orderType === "PESANAN"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {order.orderType === "PESANAN" ? "Pre-Order" : "Beli Langsung"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Jadwal Ambil */}
+                    {(order.pickupAt || order.pickupRaw) && (
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl text-sm">
+                        <CalendarClock className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        <span className="text-purple-800 font-medium">
+                          Ambil:{" "}
+                          {order.pickupAt
+                            ? new Date(order.pickupAt).toLocaleDateString("id-ID", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : order.pickupRaw}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Lokasi Ambil */}
+                    {order.pickupLocation && (
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                        <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="text-blue-800 font-medium">
+                          Ambil di: {order.pickupLocation === "UTAMA" ? "Toko Utama (Cililin)" : "Cabang (Rancapanggung)"}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Items */}
+                    <div className="border-t border-b border-gray-100 py-3 mb-4 space-y-2">
+                      {order.items.map((item) => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-700">{item.productName}</span>
+                          </div>
+                          <div className="text-gray-600">
+                            {item.quantity} × Rp {formatRupiah(item.price)} = Rp {formatRupiah(item.subtotal)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Total */}
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-gray-600">Total</span>
+                      <span className="text-xl font-bold text-amber-600">
+                        Rp {formatRupiah(Number(order.totalAmount))}
+                      </span>
+                    </div>
+
+                    {/* Notes */}
+                    {order.notes && (
+                      <div className="bg-yellow-50 rounded-xl p-3 mb-4">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                          <p className="text-sm text-yellow-800">{order.notes}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex justify-end">
+                      {getActions(order)}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </Sidebar>
+  );
+}

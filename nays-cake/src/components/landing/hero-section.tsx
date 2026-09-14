@@ -7,8 +7,20 @@ import Link from "next/link";
 export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50">
+      {/* Hero Background Image */}
+      <div className="absolute inset-0 z-0">
+        {/* Menggunakan img tag untuk auto-refresh saat file di public berubah */}
+        <img
+          src="/gambar.jpg"
+          alt="Nay's Cake Background"
+          className="w-full h-full object-cover"
+        />
+        {/* Overlay gradient untuk readability - lebih transparan */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/70 via-white/60 to-orange-50/70" />
+      </div>
+
+      {/* Animated Background Elements (di atas gambar) */}
+      <div className="absolute inset-0 pointer-events-none">
         {/* Decorative circles */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
@@ -26,7 +38,7 @@ export function HeroSection() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-amber-200">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-gray-700">Toko Kue Basah Segar Setiap Hari</span>
+            <span className="text-sm font-medium text-gray-700">Toko Aneka Jajanan & Kue Basah</span>
           </span>
         </motion.div>
 
@@ -49,7 +61,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-4 max-w-2xl mx-auto leading-relaxed"
         >
-          Kue Basah Segar Setiap Hari
+          Sajian Lezat untuk Setiap Momen Anda
         </motion.p>
 
         <motion.p
@@ -58,7 +70,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="text-base sm:text-lg text-gray-500 mb-10 max-w-xl mx-auto"
         >
-          Puluhan pilihan kue tradisional dan modern dengan kualitas terbaik dari supplier terpercaya
+          Puluhan pilihan kue tradisional dan modern dengan kualitas terbaik, dikirim langsung dari supplier terpercaya setiap hari.
         </motion.p>
 
         {/* CTA Buttons */}

@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+*.zip
+/backups/
 
 # debug
 npm-debug.log*
@@ -41,3 +43,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+Bot_nay/
+nays-cake/
+
