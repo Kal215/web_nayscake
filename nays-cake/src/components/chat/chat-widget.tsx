@@ -23,7 +23,7 @@ export function ChatWidget() {
         {chat.view && <button className="chat-icon" disabled={chat.busy} aria-label="Akhiri sesi chat" title="Akhiri sesi chat" onClick={async () => { if (window.confirm("Akhiri sesi? Riwayat tidak lagi tersedia di browser ini. Admin tetap menyimpan riwayat hingga masa retensi berakhir.") && await chat.mutate("end")) close(); }}><LogOut size={18} /></button>}
         <button id="chat-close" className="chat-icon" onClick={close} aria-label="Tutup chat" title="Tutup chat"><X size={20} /></button>
       </header>
-      <div className="chat-notice">Sesi chat berlaku 30 hari dan riwayat dapat dibaca admin. Maksimal 6 pesan terakhir dapat diproses Gemini, Groq, atau OpenRouter. Jangan kirim password atau data pembayaran.</div>
+      <div className="chat-notice">Sesi chat berlaku 30 hari dan riwayat dapat dibaca admin.</div>
       <ChatThread view={chat.view} loading={chat.loading} error={chat.error} onEarlier={() => void chat.loadEarlier()} />
       {chat.view?.mode === "WAITING" && <p className="chat-status-note">Admin belum bergabung. Balasan mungkin tidak langsung tersedia.</p>}
       <div className="chat-tools">
