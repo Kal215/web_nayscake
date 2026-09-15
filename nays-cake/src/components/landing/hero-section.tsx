@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronDown, MessageCircle, ShoppingBag } from "lucide-react";
+import { ArrowRight, ChevronDown, MessageCircle, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="neo-hero relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Hero Background Image */}
       <div className="absolute inset-0 z-0">
         {/* Menggunakan img tag untuk auto-refresh saat file di public berubah */}
@@ -16,15 +16,12 @@ export function HeroSection() {
           className="w-full h-full object-cover"
         />
         {/* Overlay gradient untuk readability - lebih transparan */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/70 via-white/60 to-orange-50/70" />
+        <div className="neo-hero-overlay absolute inset-0 bg-gradient-to-br from-amber-50/70 via-white/60 to-orange-50/70" />
       </div>
 
       {/* Animated Background Elements (di atas gambar) */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Decorative circles */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-100/20 rounded-full blur-3xl" />
       </div>
 
       {/* Content */}
@@ -82,19 +79,17 @@ export function HeroSection() {
         >
           <Link
             href="/catalog"
-            className="group flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-300 hover:scale-105"
+            className="neo-action neo-action--primary group flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl hover:shadow-amber-500/30 transition-all duration-300 hover:scale-105"
           >
             <ShoppingBag className="w-5 h-5" />
             <span>Lihat Katalog</span>
-            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            <ArrowRight className="w-5 h-5" />
           </Link>
           <a
             href="https://wa.me/6285126023250"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-8 py-4 bg-white text-gray-800 font-semibold rounded-full shadow-lg hover:shadow-xl border border-gray-200 hover:border-amber-300 transition-all duration-300 hover:scale-105"
+            className="neo-action flex items-center gap-3 px-8 py-4 bg-white text-gray-800 font-semibold rounded-full shadow-lg hover:shadow-xl border border-gray-200 hover:border-amber-300 transition-all duration-300 hover:scale-105"
           >
             <MessageCircle className="w-5 h-5 text-green-500" />
             <span>Pesan Sekarang</span>
@@ -106,7 +101,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 flex flex-wrap justify-center gap-8 sm:gap-12"
+          className="mt-10 flex flex-wrap justify-center gap-8 sm:gap-12"
         >
           {[
             { number: "77+", label: "Produk" },

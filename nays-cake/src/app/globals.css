@@ -1,6 +1,65 @@
 @import "tailwindcss";
 @source "../";
 
+/* Opt-in depth: data tables and semantic status colors remain flat. */
+:root {
+  --neo-base: #eef2f1;
+  --neo-ink: #243b38;
+  --neo-shadow: #cbd5d2;
+  --neo-light: #ffffff;
+  --neo-accent: #176b56;
+  --neo-raised: 7px 7px 16px var(--neo-shadow), -7px -7px 16px var(--neo-light);
+  --neo-inset: inset 3px 3px 6px #d3ddda, inset -3px -3px 6px #ffffff;
+}
+.neo-page, .neo-band { background: var(--neo-base); color: var(--neo-ink); }
+.neo-surface { background: var(--neo-base); border: 1px solid #ffffff; border-radius: 8px; box-shadow: var(--neo-raised); }
+.neo-control {
+  background: var(--neo-base); color: var(--neo-ink); border: 1px solid #b8c8c2;
+  border-radius: 8px; box-shadow: var(--neo-inset); min-height: 44px;
+}
+.neo-control::placeholder { color: #657570; opacity: 1; }
+.neo-action {
+  background: var(--neo-base); background-image: none; color: var(--neo-ink);
+  border: 1px solid #d1dbd7; border-radius: 8px;
+  box-shadow: 4px 4px 9px var(--neo-shadow), -4px -4px 9px var(--neo-light);
+  min-height: 44px; transition: box-shadow 160ms ease, background-color 160ms ease;
+}
+.neo-action:hover { background: #f5f8f7; }
+.neo-action:active, .neo-action[aria-current="page"] { box-shadow: var(--neo-inset); background: #e5eeea; }
+.neo-action--primary {
+  background: var(--neo-accent); color: #ffffff; border-color: #145b49;
+  box-shadow: 4px 4px 9px #bdcec7, -4px -4px 9px #ffffff, inset 0 1px 0 #ffffff30;
+}
+.neo-action--primary:hover { background: #125944; }
+.neo-action--primary:active { background: #104f3d; box-shadow: inset 3px 3px 6px #0b3b2d; }
+.neo-action:disabled, .neo-action[aria-disabled="true"] { box-shadow: none; opacity: 0.55; cursor: not-allowed; }
+.neo-action:focus-visible, .neo-control:focus-visible, .neo-product:focus-visible { outline: 3px solid #176b56; outline-offset: 4px; }
+.neo-product { min-width: 0; }
+.neo-product h3 { overflow-wrap: anywhere; }
+.neo-login { padding-block: 40px; }
+.neo-login-panel { padding: 28px; }
+.neo-metric { padding: 20px; min-width: 0; }
+.neo-catalog-filters { background: var(--neo-base); }
+.neo-catalog-sidebar { overflow-y: auto; }
+.neo-modal-heading { flex-wrap: wrap; }
+.neo-hero { min-height: min(760px, 88svh); padding-block: 80px 104px; }
+.neo-hero h1 { font-size: 76px; letter-spacing: 0; line-height: 1.1; }
+.neo-hero h1 > span { background: none; color: #244b41; }
+.neo-hero-overlay { background: #f1f5f2bb; }
+.neo-stats { background: #205a4d; }
+.neo-stats .text-white { font-size: 44px; }
+@media (max-width: 640px) {
+  .neo-hero { min-height: 0; padding-block: 48px 84px; }
+  .neo-hero h1 { font-size: 48px; }
+  .neo-login-panel { padding: 24px 20px; }
+  .neo-metric { padding: 16px; }
+  .neo-surface { box-shadow: 4px 4px 10px var(--neo-shadow), -4px -4px 10px var(--neo-light); }
+}
+@media (prefers-reduced-motion: reduce) { .neo-action { transition: none; } }
+@media (forced-colors: active) {
+  .neo-surface, .neo-control, .neo-action { border: 1px solid CanvasText; box-shadow: none; }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

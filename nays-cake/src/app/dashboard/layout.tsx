@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="neo-page min-h-screen bg-gray-100">
       {children}
     </div>
   );
