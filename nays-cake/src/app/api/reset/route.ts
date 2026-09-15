@@ -1,115 +1,26 @@
 import { NextResponse } from "next/server";
+import { apiError, ApiError, requireAdmin } from "@/lib/api";
+import { audit, dayRange, jakartaDate, transaction } from "@/lib/business";
 import { prisma } from "@/lib/prisma";
 
-// POST /api/reset - Reset all daily data (sales, sale_items, stock_entries)
+// Recorded sales are immutable. Only unused, open stock can be cleared.
 export async function POST() {
   try {
-    // Get all sales for today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Delete all sale items from today's sales
-    const todaySales = await prisma.sale.findMany({
-      where: {
-        saleDate: {
-          gte: today,
-        },
-      },
+    const user = await requireAdmin(true);
+    await transaction(async tx => {
+      const sales = await tx.sale.count({ where: { saleDate: dayRange() } });
+      const closed = await tx.stockEntry.count({ where: { date: dayRange(), quantityRemaining: { not: null } } });
+      if (sales || closed) throw new ApiError(409, "Hari ini sudah memiliki transaksi atau stok ditutup. Data tidak dapat direset.");
+      const deleted = await tx.stockEntry.deleteMany({ where: { date: dayRange() } });
+      await audit(tx, user.id, "UNUSED_STOCK_RESET", jakartaDate(), String(deleted.count));
     });
-    
-    const saleIds = todaySales.map((sale: { id: string }) => sale.id);
-    
-    if (saleIds.length > 0) {
-      await prisma.saleItem.deleteMany({
-        where: {
-          saleId: {
-            in: saleIds,
-          },
-        },
-      });
-      
-      await prisma.sale.deleteMany({
-        where: {
-          id: {
-            in: saleIds,
-          },
-        },
-      });
-    }
-    
-    // Delete all stock entries for today (they will be re-entered)
-    await prisma.stockEntry.deleteMany({
-      where: {
-        date: {
-          gte: today,
-        },
-      },
-    });
-    
-    return NextResponse.json({
-      success: true,
-      message: "Daily data reset successfully",
-      deletedSales: saleIds.length,
-    });
-  } catch (error) {
-    console.error("Reset error:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to reset daily data" },
-      { status: 500 }
-    );
-  }
+    return NextResponse.json({ success: true });
+  } catch (error) { return apiError(error); }
 }
-
-// GET /api/reset - Get today's summary
 export async function GET() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const todaySales = await prisma.sale.findMany({
-      where: {
-        saleDate: {
-          gte: today,
-        },
-      },
-      include: {
-        items: true,
-      },
-    });
-    
-    const todayStockEntries = await prisma.stockEntry.findMany({
-      where: {
-        date: {
-          gte: today,
-        },
-      },
-    });
-    
-    const totalSales = todaySales.length;
-    const totalRevenue = todaySales.reduce((sum: number, sale: { totalAmount: { toString: () => string; }; }) => sum + Number(sale.totalAmount), 0);
-    const totalProfit = todaySales.reduce((sum: number, sale: { totalProfit: { toString: () => string; }; }) => sum + Number(sale.totalProfit), 0);
-    const totalItemsSold = todaySales.reduce(
-      (sum: number, sale: { items: { quantity: number; }[]; }) => sum + sale.items.reduce((itemSum: number, item: { quantity: number; }) => itemSum + item.quantity, 0),
-      0
-    );
-    const totalStockEntries = todayStockEntries.reduce(
-      (sum: number, entry: { quantityIn: number; }) => sum + entry.quantityIn,
-      0
-    );
-    
-    return NextResponse.json({
-      date: today.toISOString().split("T")[0],
-      totalSales,
-      totalRevenue,
-      totalProfit,
-      totalItemsSold,
-      totalStockEntries,
-    });
-  } catch (error) {
-    console.error("Get summary error:", error);
-    return NextResponse.json(
-      { error: "Failed to get summary" },
-      { status: 500 }
-    );
-  }
+    await requireAdmin();
+    const sales = await prisma.sale.aggregate({ where: { saleDate: dayRange() }, _count: true, _sum: { totalAmount: true, totalProfit: true } });
+    return NextResponse.json({ date: jakartaDate(), totalSales: sales._count, totalRevenue: Number(sales._sum.totalAmount || 0), totalProfit: Number(sales._sum.totalProfit || 0) });
+  } catch (error) { return apiError(error); }
 }

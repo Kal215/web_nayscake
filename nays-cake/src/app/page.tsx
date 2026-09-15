@@ -4,8 +4,12 @@ import { AboutSection } from "@/components/landing/about-section";
 import { ProductsSection } from "@/components/landing/products-section";
 import { Footer } from "@/components/landing/footer";
 import { prisma } from "@/lib/prisma";
+import { inventory } from "@/lib/inventory";
+
+export const dynamic = "force-dynamic";
 
 async function getProducts() {
+  const stock = await inventory();
   const products = await prisma.product.findMany({
     where: { isActive: true },
     include: { supplier: true },
@@ -18,22 +22,23 @@ async function getProducts() {
     name: product.name,
     slug: product.slug,
     price: Number(product.sellingPrice),
-    stock: 0, // Will be calculated from stock entries
+    stock: stock.get(product.id) || 0,
     supplier: product.supplier.name,
     imageUrl: product.imageUrl,
   }));
 }
 
 async function getStats() {
-  const [products, suppliers] = await Promise.all([
+  const [products, suppliers, customers] = await Promise.all([
     prisma.product.count({ where: { isActive: true } }),
     prisma.supplier.count({ where: { isActive: true } }),
+    prisma.order.groupBy({ by: ["customerPhone"], where: { customerPhone: { not: null } } }),
   ]);
 
   return {
     products,
     suppliers,
-    customers: 1000, // Default value
+    customers: customers.length,
   };
 }
 

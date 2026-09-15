@@ -94,6 +94,10 @@ model StockEntry {
   quantityIn Int                          // Jumlah barang masuk
   quantityRemaining Int?                 // Sisa (sore) — null = belum diisi
   notes      String?
+  price      Decimal? @db.Decimal(10, 2)
+  cost       Decimal? @db.Decimal(10, 2)
+  quantityReturned Int @default(0)
+  quantityDamaged Int @default(0)
   createdAt  DateTime @default(now())
 
   // Relations
@@ -116,6 +120,9 @@ model Sale {
   paymentMethod String?                       // cash, transfer, dll
   customerName String?
   notes        String?
+  requestKey   String? @unique
+  orderId      String? @unique
+  order        Order? @relation(fields: [orderId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -179,6 +186,7 @@ enum OrderStatus {
 model Order {
   id            String      @id @default(cuid())
   orderNumber   String      @unique          // NAY-0001, dst
+  requestKey    String?     @unique
   customerPhone String?                       // nomor WA pelanggan
   customerName  String?
   totalAmount   Decimal     @db.Decimal(12, 2)
@@ -194,6 +202,7 @@ model Order {
   updatedAt     DateTime    @updatedAt
 
   items OrderItem[]
+  sale Sale?
 
   @@index([status])
   @@index([createdAt])
@@ -208,10 +217,85 @@ model OrderItem {
   quantity    Int
   price       Decimal  @db.Decimal(10, 2)    // harga jual per unit saat pesan
   subtotal    Decimal  @db.Decimal(12, 2)    // quantity * price
+  cost        Decimal? @db.Decimal(10, 2)
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@map("order_items")
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+  actor String
+  action String
+  entityId String
+  details String?
+  createdAt DateTime @default(now())
+  @@index([entityId, createdAt])
+}
+
+model Notification {
+  id String @id @default(cuid())
+  eventKey String @unique
+  phone String
+  text String
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([sentAt, createdAt])
+}
+
+model LoginAttempt {
+  key String @id
+  count Int @default(1)
+  expiresAt DateTime
+}
+
+enum ChatMode {
+  AI
+  WAITING
+  ADMIN
+}
+enum ChatRole {
+  VISITOR
+  AI
+  ADMIN
+  SYSTEM
+}
+model ChatConversation {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  mode ChatMode @default(AI)
+  assigneeId String?
+  version Int @default(0)
+  messageCount Int @default(0)
+  visitorSequence Int @default(0)
+  adminReadSequence Int @default(0)
+  aiJobId String?
+  aiStartedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+  messages ChatMessage[]
+  @@index([updatedAt, id])
+  @@index([expiresAt])
+}
+model ChatMessage {
+  id String @id @default(cuid())
+  conversationId String
+  sequence Int
+  role ChatRole
+  content String
+  requestId String?
+  createdAt DateTime @default(now())
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@unique([conversationId, sequence])
+  @@unique([conversationId, requestId])
+}
+model ChatRateBucket {
+  key String @id
+  count Int @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
 }

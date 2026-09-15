@@ -13,9 +13,11 @@ import {
   RefreshCw,
   Menu,
   Cake,
+  MessageCircle,
   ClipboardList
 } from "lucide-react";
 import { useState } from "react";
+import { useUnreadChats } from "@/hooks/useUnreadChats";
 import { AlarmPesanan } from "./AlarmPesanan";
 import { usePesananBaru } from "@/hooks/usePesananBaru";
 
@@ -26,6 +28,7 @@ const navigation = [
   { name: "Stok Harian", href: "/dashboard/stok", icon: RefreshCw },
   { name: "Penjualan", href: "/dashboard/penjualan", icon: ShoppingCart },
   { name: "Pesanan", href: "/dashboard/pesanan", icon: ClipboardList, badge: true },
+  { name: "Chat Pelanggan", href: "/dashboard/chat", icon: MessageCircle, chatBadge: true },
   { name: "Laporan", href: "/dashboard/laporan", icon: TrendingUp },
 ];
 
@@ -37,6 +40,7 @@ export function Sidebar({ children }: SidebarProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { count } = usePesananBaru(15000);
+  const chatCount = useUnreadChats();
 
   const handleLogout = async () => {
     await signOut({ redirectTo: "/login" });
@@ -70,10 +74,11 @@ export function Sidebar({ children }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="px-4 py-6 space-y-2">
+        <nav className="px-4 py-6 space-y-2 overflow-y-auto max-h-[calc(100dvh-190px)]">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
-            const showBadge = item.badge && count > 0;
+            const badgeCount = item.chatBadge ? chatCount : item.badge ? count : 0;
+            const showBadge = badgeCount > 0;
             return (
               <Link
                 key={item.name}
@@ -88,7 +93,7 @@ export function Sidebar({ children }: SidebarProps) {
                 <span className="font-medium">{item.name}</span>
                 {showBadge && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {count > 9 ? "9+" : count}
+                    {badgeCount > 9 ? "9+" : badgeCount}
                   </span>
                 )}
               </Link>

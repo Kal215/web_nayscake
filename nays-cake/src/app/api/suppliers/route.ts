@@ -1,49 +1,24 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
+import { apiError, requireAdmin } from "@/lib/api";
+import { audit, transaction } from "@/lib/business";
+import { z } from "zod";
 export async function GET() {
   try {
-    const suppliers = await prisma.supplier.findMany({
-      orderBy: { name: "asc" },
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
-    });
-
+    await requireAdmin();
+    const suppliers = await prisma.supplier.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, include: { _count: { select: { products: true } } } });
     return NextResponse.json({ suppliers });
-  } catch (error) {
-    console.error("Failed to fetch suppliers:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch suppliers" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return apiError(error); }
 }
-
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { name, phone, address, notes } = body;
-
-    if (!name) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    const supplier = await prisma.supplier.create({
-      data: { name, phone, address, notes },
+    const user = await requireAdmin();
+    const data = z.object({ name: z.string().trim().min(1).max(150), phone: z.string().max(30).nullish(), address: z.string().max(500).nullish(), notes: z.string().max(2000).nullish() }).parse(await request.json());
+    const supplier = await transaction(async tx => {
+      const result = await tx.supplier.create({ data });
+      await audit(tx, user.id, "SUPPLIER_CREATED", result.id);
+      return result;
     });
-
     return NextResponse.json({ supplier }, { status: 201 });
-  } catch (error) {
-    console.error("Failed to create supplier:", error);
-    return NextResponse.json(
-      { error: "Failed to create supplier" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return apiError(error); }
 }

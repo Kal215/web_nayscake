@@ -18,7 +18,7 @@ interface Product {
   category: string | null;
   costPrice: number;
   sellingPrice: number;
-  supplier: { name: string };
+  supplier: string;
   supplierId: string;
   imageUrl: string | null;
 }
@@ -51,7 +51,7 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/products?internal=1");
       const data = await res.json();
       setProducts(data.products || []);
       setSuppliers(data.suppliers || []);
@@ -143,7 +143,7 @@ export default function ProductsPage() {
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    p.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -240,7 +240,7 @@ export default function ProductsPage() {
                           <span className="font-medium text-gray-900">{product.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{product.supplier.name}</td>
+                      <td className="px-6 py-4 text-gray-600">{product.supplier}</td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                           {product.category || "Tanpa Kategori"}

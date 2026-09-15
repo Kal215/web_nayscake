@@ -40,6 +40,8 @@ interface StockRow {
   modal: number;
   masuk: number;
   sisa: number | null;
+  retur: number;
+  rusak: number;
   terjual: number | null;
   omzet: number | null;
   setoran: number | null;
@@ -93,15 +95,21 @@ export default function StokPage() {
   // Sisa input state
   const [editingSisa, setEditingSisa] = useState<string | null>(null);
   const [sisaValue, setSisaValue] = useState("");
+  const [returValue, setReturValue] = useState("0");
+  const [rusakValue, setRusakValue] = useState("0");
+  const [error, setError] = useState("");
   const [submittingSisa, setSubmittingSisa] = useState(false);
 
   const fetchStockData = useCallback(async () => {
     try {
       const res = await fetch("/api/stock");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memuat stok");
       setStockData(data);
+      setError("");
     } catch (error) {
       console.error("Failed to fetch stock data:", error);
+      setError(error instanceof Error ? error.message : "Gagal memuat stok");
     } finally {
       setLoading(false);
     }
@@ -109,7 +117,7 @@ export default function StokPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/products?internal=1");
       const data = await res.json();
       setProducts(data.products || []);
     } catch (error) {
@@ -174,6 +182,8 @@ export default function StokPage() {
         body: JSON.stringify({
           id: entryId,
           quantityRemaining: sisa,
+          quantityReturned: Number(returValue),
+          quantityDamaged: Number(rusakValue),
         }),
       });
       
@@ -196,20 +206,13 @@ export default function StokPage() {
   const handleReset = async () => {
     setIsResetting(true);
     try {
-      // Delete all stock entries for today
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      await fetch("/api/stock", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: today.toISOString() }),
-      });
+      const response = await fetch("/api/reset", { method: "POST" });
+      if (!response.ok) throw new Error((await response.json()).error || "Gagal reset");
       
       fetchStockData();
     } catch (error) {
       console.error("Reset error:", error);
-      alert("Gagal mereset data");
+      alert(error instanceof Error ? error.message : "Gagal mereset data");
     } finally {
       setIsResetting(false);
       setShowResetConfirm(false);
@@ -246,6 +249,7 @@ export default function StokPage() {
     <Sidebar>
       <div className="max-w-7xl mx-auto">
         <TombolKembali />
+        {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -417,9 +421,12 @@ export default function StokPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {editingSisa === row.id ? (
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-wrap items-end justify-center gap-2">
+                            <label className="text-xs">Retur<input aria-label="Jumlah retur" type="number" min="0" max={row.masuk} value={returValue} onChange={e => setReturValue(e.target.value)} className="block w-20 border rounded-lg p-1" /></label>
+                            <label className="text-xs">Rusak<input aria-label="Jumlah rusak" type="number" min="0" max={row.masuk} value={rusakValue} onChange={e => setRusakValue(e.target.value)} className="block w-20 border rounded-lg p-1" /></label>
                             <input
                               type="number"
+                              aria-label="Jumlah sisa"
                               value={sisaValue}
                               onChange={(e) => setSisaValue(e.target.value)}
                               className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center"
@@ -449,6 +456,8 @@ export default function StokPage() {
                             onClick={() => {
                               setEditingSisa(row.id);
                               setSisaValue(row.sisa?.toString() || "");
+                              setReturValue(String(row.retur || 0));
+                              setRusakValue(String(row.rusak || 0));
                             }}
                             className={`px-3 py-1 rounded-full font-medium ${
                               row.sisa === null
@@ -689,7 +698,7 @@ export default function StokPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">Reset Data Harian?</h3>
-                  <p className="text-sm text-gray-500">Semua entry stok hari ini akan dihapus.</p>
+                    <p className="text-sm text-gray-500">Stok hari ini yang belum memiliki transaksi atau penutupan akan dihapus.</p>
                 </div>
               </div>
               <div className="bg-yellow-50 rounded-xl p-4 mb-4">

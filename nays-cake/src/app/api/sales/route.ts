@@ -1,94 +1,34 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError, requireAdmin } from "@/lib/api";
+import { transaction } from "@/lib/business";
+import { recordSale } from "@/lib/sales";
+import { quantity } from "@/lib/validation";
+import { z } from "zod";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-
-    const where: any = {};
-    if (startDate && endDate) {
-      where.saleDate = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
-
-    const sales = await prisma.sale.findMany({
-      where,
-      orderBy: { saleDate: "desc" },
-      take: limit,
-      include: {
-        _count: {
-          select: { items: true },
-        },
-      },
-    });
-
+    await requireAdmin();
+    const q = new URL(request.url).searchParams;
+    const limit = z.coerce.number().int().min(1).max(100).parse(q.get("limit") || 50);
+    const sales = await prisma.sale.findMany({ orderBy: { saleDate: "desc" }, take: limit, include: { _count: { select: { items: true } } } });
     return NextResponse.json({ sales });
-  } catch (error) {
-    console.error("Failed to fetch sales:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch sales" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return apiError(error); }
 }
 
 export async function POST(request: Request) {
+  let requestKey: string | undefined;
   try {
-    const body = await request.json();
-    const { items, customerName, paymentMethod, notes } = body;
-
-    if (!items || items.length === 0) {
-      return NextResponse.json(
-        { error: "Items are required" },
-        { status: 400 }
-      );
-    }
-
-    // Calculate totals
-    let totalAmount = 0;
-    let totalCost = 0;
-
-    const saleItems = items.map((item: any) => {
-      const subtotal = Number(item.price) * item.quantity;
-      const cost = Number(item.cost) * item.quantity;
-      totalAmount += subtotal;
-      totalCost += cost;
-      return {
-        productId: item.productId,
-        supplierId: item.supplierId,
-        quantity: item.quantity,
-        price: item.price,
-        cost: item.cost,
-        subtotal: subtotal,
-        profit: subtotal - cost,
-      };
-    });
-
-    const sale = await prisma.sale.create({
-      data: {
-        totalAmount: totalAmount,
-        totalCost: totalCost,
-        totalProfit: totalAmount - totalCost,
-        customerName,
-        paymentMethod,
-        notes,
-        items: {
-          create: saleItems,
-        },
-      },
-    });
-
+    const user = await requireAdmin();
+    const input = z.object({ requestKey: z.string().uuid(), items: z.array(z.object({ productId: z.string().min(1), quantity })).min(1).max(100), customerName: z.string().max(150).optional(), paymentMethod: z.enum(["cash", "transfer"]).optional(), notes: z.string().max(2000).optional() }).parse(await request.json());
+    requestKey = input.requestKey;
+    const sale = await transaction(tx => recordSale(tx, input, user.id));
     return NextResponse.json({ sale }, { status: 201 });
   } catch (error) {
-    console.error("Failed to create sale:", error);
-    return NextResponse.json(
-      { error: "Failed to create sale" },
-      { status: 500 }
-    );
+    if (requestKey && error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      const existing = await prisma.sale.findUnique({ where: { requestKey } });
+      if (existing) return NextResponse.json({ sale: existing }, { status: 201 });
+    }
+    return apiError(error);
   }
 }

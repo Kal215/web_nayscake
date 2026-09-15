@@ -1,4 +1,5 @@
 "use client";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -81,33 +82,53 @@ export default function PesananPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus | "SEMUA">("SEMUA");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [history, setHistory] = useState<Record<string, { id: string; action: string; details: string | null; createdAt: string }[]>>({});
+  const loadHistory = async (id: string) => {
+    try {
+      const res = await fetch("/api/orders/" + id);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error);
+      setHistory(current => ({ ...current, [id]: body.history }));
+    } catch (e) { setError(e instanceof Error ? e.message : "Gagal memuat riwayat"); }
+  };
 
   const fetchOrders = useCallback(async () => {
     try {
       const url = activeTab === "SEMUA" 
         ? "/api/orders" 
         : `/api/orders?status=${activeTab}`;
-      const res = await fetch(url);
+      const res = await fetch(url + (url.includes("?") ? "&" : "?") + new URLSearchParams({ search, page: String(page) }));
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memuat pesanan");
       setOrders(data.orders || []);
+      setHasMore(!!data.hasMore);
+      setError("");
     } catch (error) {
       console.error("Failed to fetch orders:", error);
+      setError(error instanceof Error ? error.message : "Gagal memuat pesanan");
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, search, page]);
 
   useEffect(() => {
     fetchOrders();
+    const timer = setInterval(fetchOrders, 15000);
+    return () => clearInterval(timer);
   }, [fetchOrders]);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    if (newStatus === "SELESAI" && !confirm("Pesanan sudah diambil dan pembayaran sudah diterima?")) return;
     setUpdatingId(orderId);
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, paid: newStatus === "SELESAI" }),
       });
       
       if (res.ok) {
@@ -194,6 +215,9 @@ export default function PesananPage() {
         </div>
 
         {/* Tabs */}
+        <label className="block text-sm mb-4">Cari pesanan<input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Nomor pesanan, nama, atau telepon" className="block border rounded-lg p-2 mt-1 w-full max-w-md" /></label>
+        <div className="flex items-center gap-3 mb-4"><button title="Halaman sebelumnya" aria-label="Halaman sebelumnya" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 border rounded-lg disabled:opacity-40"><ChevronLeft size={18} /></button><span className="text-sm">Halaman {page}</span><button title="Halaman berikutnya" aria-label="Halaman berikutnya" disabled={!hasMore} onClick={() => setPage(p => p + 1)} className="p-2 border rounded-lg disabled:opacity-40"><ChevronRight size={18} /></button></div>
+        {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {tabs.map((tab) => {
             const count = tab.status === "SEMUA" 
@@ -203,7 +227,7 @@ export default function PesananPage() {
             return (
               <button
                 key={tab.status}
-                onClick={() => setActiveTab(tab.status)}
+                onClick={() => { setActiveTab(tab.status); setPage(1); }}
                 className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.status
                     ? "bg-amber-500 text-white"
@@ -246,9 +270,9 @@ export default function PesananPage() {
                     className="bg-white rounded-2xl p-6 shadow-sm"
                   >
                     {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <p className="font-bold text-gray-900 text-lg">{order.orderNumber}</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 text-base break-all">{order.orderNumber}</p>
                         <p className="text-sm text-gray-500">{formatTanggal(order.createdAt)}</p>
                       </div>
                       <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} ${config.color}`}>
@@ -258,6 +282,7 @@ export default function PesananPage() {
                     </div>
 
                     {/* Customer Info */}
+                    <details className="text-sm mb-4" onToggle={e => { if (e.currentTarget.open) void loadHistory(order.id); }}><summary className="cursor-pointer text-gray-600">Riwayat pesanan</summary>{history[order.id]?.map(event => <p key={event.id} className="mt-2 break-words">{formatTanggal(event.createdAt)}: {event.details || ({ ORDER_CREATED: "Pesanan dibuat", ORDER_STATUS: "Status berubah" }[event.action] || event.action)}</p>)}</details>
                     <div className="flex flex-wrap gap-4 mb-4 text-sm">
                       {order.customerName && (
                         <div className="flex items-center gap-2 text-gray-600">

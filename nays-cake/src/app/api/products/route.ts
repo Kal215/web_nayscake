@@ -1,156 +1,41 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError, ApiError, requireAdmin } from "@/lib/api";
+import { inventory } from "@/lib/inventory";
+import { productInput } from "@/lib/validation";
+import { audit, transaction } from "@/lib/business";
+import { Prisma } from "@prisma/client";
 
-// GET /api/products - Get all products with stock info
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
-    const category = searchParams.get("category") || "";
-    const supplier = searchParams.get("supplier") || "";
-
-    // Build where clause
-    const where: any = {
-      isActive: true,
-    };
-
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { category: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    if (category) {
-      where.category = category;
-    }
-
-    if (supplier) {
-      where.supplier = { name: supplier };
-    }
-
-    // Get products with supplier info and calculate current stock
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        supplier: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    // Calculate current stock for each product
-    const productsWithStock = await Promise.all(
-      products.map(async (product) => {
-        // Total stock in
-        const totalStockIn = await prisma.stockEntry.aggregate({
-          where: { productId: product.id },
-          _sum: { quantityIn: true },
-        });
-
-        // Total sold
-        const totalSold = await prisma.saleItem.aggregate({
-          where: { productId: product.id },
-          _sum: { quantity: true },
-        });
-
-        const currentStock =
-          (totalStockIn._sum.quantityIn || 0) -
-          (totalSold._sum.quantity || 0);
-
-        return {
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          sellingPrice: Number(product.sellingPrice),
-          costPrice: Number(product.costPrice),
-          category: product.category,
-          supplier: product.supplier.name,
-          supplierId: product.supplierId,
-          stock: Math.max(0, currentStock),
-          minStock: product.minStock,
-          isAvailable: currentStock > 0,
-          imageUrl: product.imageUrl,
-        };
-      })
-    );
-
-    // Get unique categories
-    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
-
-    // Get unique suppliers with IDs
-    const supplierMap = new Map();
-    products.forEach((p) => {
-      if (!supplierMap.has(p.supplierId)) {
-        supplierMap.set(p.supplierId, {
-          id: p.supplierId,
-          name: p.supplier.name,
-        });
-      }
-    });
-    const suppliers = Array.from(supplierMap.values());
-
+    const q = new URL(request.url).searchParams;
+    const internal = q.get("internal") === "1";
+    if (internal) await requireAdmin();
+    const where: Prisma.ProductWhereInput = { isActive: true, supplier: { isActive: true } };
+    if (q.get("search")) where.OR = [{ name: { contains: q.get("search")!.slice(0, 150), mode: "insensitive" } }, { category: { contains: q.get("search")!.slice(0, 150), mode: "insensitive" } }];
+    if (q.get("category")) where.category = q.get("category");
+    if (q.get("supplier")) where.supplier = { isActive: true, name: q.get("supplier")! };
+    const [products, stock] = await Promise.all([prisma.product.findMany({ where, include: { supplier: true }, orderBy: { name: "asc" } }), inventory()]);
     return NextResponse.json({
-      products: productsWithStock,
-      categories,
-      suppliers,
-      total: productsWithStock.length,
-    });
-  } catch (error) {
-    console.error("Get products error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch products" },
-    );
-  }
+      products: products.map(p => ({ id: p.id, name: p.name, slug: p.slug, sellingPrice: Number(p.sellingPrice), category: p.category, supplier: p.supplier.name, stock: stock.get(p.id) || 0, minStock: p.minStock, isAvailable: (stock.get(p.id) || 0) > 0, imageUrl: p.imageUrl, ...(internal ? { costPrice: Number(p.costPrice), supplierId: p.supplierId } : {}) })),
+      categories: [...new Set(products.map(p => p.category).filter(Boolean))],
+      suppliers: internal ? [...new Map(products.map(p => [p.supplierId, { id: p.supplierId, name: p.supplier.name }])).values()] : [],
+      total: products.length,
+    }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) { return apiError(error); }
 }
 
-// POST /api/products - Create a new product
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { name, costPrice, sellingPrice, category, supplierId, imageUrl } = body;
-
-    // Validate required fields
-    if (!name || !costPrice || !sellingPrice || !supplierId) {
-      return NextResponse.json(
-        { error: "Name, cost price, selling price, and supplier are required" },
-        { status: 400 }
-      );
-    }
-
-    // Generate a unique slug
-    const slug =
-      name
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/[\s_-]+/g, "-")
-        .replace(/^-+|-+$/g, "") +
-      "-" +
-      Date.now().toString(36);
-
-    const product = await prisma.product.create({
-      data: {
-        name,
-        slug,
-        costPrice,
-        sellingPrice,
-        category,
-        supplierId,
-        imageUrl,
-      },
-      include: {
-        supplier: true,
-      },
+    const user = await requireAdmin();
+    const data = productInput.parse(await request.json());
+    const product = await transaction(async tx => {
+      const supplier = await tx.supplier.findUnique({ where: { id: data.supplierId } });
+      if (!supplier?.isActive) throw new ApiError(400, "Pemasok tidak tersedia");
+      const p = await tx.product.create({ data: { ...data, slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + crypto.randomUUID(), imageUrl: data.imageUrl || null }, include: { supplier: true } });
+      await audit(tx, user.id, "PRODUCT_CREATED", p.id);
+      return p;
     });
-
     return NextResponse.json(product, { status: 201 });
-  } catch (error) {
-    console.error("Create product error:", error);
-    return NextResponse.json(
-      { error: "Failed to create product" },
-      { status: 500 }
-    );
-  }
+  } catch (error) { return apiError(error); }
 }

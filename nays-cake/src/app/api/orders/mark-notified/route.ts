@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
   try {
     const { ids } = await request.json();
-    if (!Array.isArray(ids) || ids.length === 0) {
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 50 || ids.some(id => typeof id !== "string" || !id)) {
       return NextResponse.json({ error: "ids wajib diisi" }, { status: 400 });
     }
     const result = await prisma.order.updateMany({

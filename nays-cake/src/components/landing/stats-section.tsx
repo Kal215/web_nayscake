@@ -56,7 +56,7 @@ export function StatsSection({ stats }: StatsSectionProps) {
   const displayStats = stats || defaultStats;
 
   return (
-    <section className="py-20 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 relative overflow-hidden">
+    <section className="neo-stats py-12 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-0 w-full h-full" style={{
@@ -76,8 +76,8 @@ export function StatsSection({ stats }: StatsSectionProps) {
             <div className="text-5xl md:text-6xl lg:text-7xl text-white mb-2">
               <Counter end={displayStats.products} suffix="+" />
             </div>
-            <div className="text-xl md:text-2xl text-amber-100 font-medium">Produk</div>
-            <div className="mt-2 text-amber-200 text-sm">Varian kue berkualitas</div>
+            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Produk</div>
+            <div className="mt-2 text-emerald-100 text-sm">Varian kue berkualitas</div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -89,8 +89,8 @@ export function StatsSection({ stats }: StatsSectionProps) {
             <div className="text-5xl md:text-6xl lg:text-7xl text-white mb-2">
               <Counter end={displayStats.suppliers} suffix="+" />
             </div>
-            <div className="text-xl md:text-2xl text-amber-100 font-medium">Supplier</div>
-            <div className="mt-2 text-amber-200 text-sm">Partner terpercaya</div>
+            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Supplier</div>
+            <div className="mt-2 text-emerald-100 text-sm">Partner terpercaya</div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -102,8 +102,8 @@ export function StatsSection({ stats }: StatsSectionProps) {
             <div className="text-5xl md:text-6xl lg:text-7xl text-white mb-2">
               <Counter end={displayStats.customers} suffix="+" />
             </div>
-            <div className="text-xl md:text-2xl text-amber-100 font-medium">Pelanggan</div>
-            <div className="mt-2 text-amber-200 text-sm">Pujaan kepercayaan</div>
+            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Pelanggan</div>
+            <div className="mt-2 text-emerald-100 text-sm">Pujaan kepercayaan</div>
           </motion.div>
         </div>
       </div>

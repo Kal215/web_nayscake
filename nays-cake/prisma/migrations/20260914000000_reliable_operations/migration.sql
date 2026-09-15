@@ -1,0 +1,15 @@
+ALTER TABLE "stock_entries" ADD COLUMN "price" DECIMAL(10,2), ADD COLUMN "cost" DECIMAL(10,2), ADD COLUMN "quantityReturned" INTEGER NOT NULL DEFAULT 0, ADD COLUMN "quantityDamaged" INTEGER NOT NULL DEFAULT 0;
+UPDATE "stock_entries" s SET "price" = p."sellingPrice", "cost" = p."costPrice" FROM "products" p WHERE s."productId" = p.id;
+ALTER TABLE "orders" ADD COLUMN "requestKey" TEXT;
+CREATE UNIQUE INDEX "orders_requestKey_key" ON "orders"("requestKey");
+ALTER TABLE "sales" ADD COLUMN "requestKey" TEXT, ADD COLUMN "orderId" TEXT;
+CREATE UNIQUE INDEX "sales_requestKey_key" ON "sales"("requestKey");
+CREATE UNIQUE INDEX "sales_orderId_key" ON "sales"("orderId");
+ALTER TABLE "sales" ADD CONSTRAINT "sales_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "order_items" ADD COLUMN "cost" DECIMAL(10,2);
+UPDATE "order_items" i SET "cost" = p."costPrice" FROM "products" p WHERE i."productId" = p.id;
+CREATE TABLE "AuditLog" ("id" TEXT PRIMARY KEY, "actor" TEXT NOT NULL, "action" TEXT NOT NULL, "entityId" TEXT NOT NULL, "details" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX "AuditLog_entityId_createdAt_idx" ON "AuditLog"("entityId", "createdAt");
+CREATE TABLE "Notification" ("id" TEXT PRIMARY KEY, "eventKey" TEXT NOT NULL UNIQUE, "phone" TEXT NOT NULL, "text" TEXT NOT NULL, "sentAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX "Notification_sentAt_createdAt_idx" ON "Notification"("sentAt", "createdAt");
+CREATE TABLE "LoginAttempt" ("key" TEXT PRIMARY KEY, "count" INTEGER NOT NULL DEFAULT 1, "expiresAt" TIMESTAMP(3) NOT NULL);

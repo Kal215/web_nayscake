@@ -25,10 +25,10 @@ const defaultProducts: Product[] = [
 ];
 
 export function ProductsSection({ initialProducts }: ProductsSectionProps) {
-  const products = initialProducts && initialProducts.length > 0 ? initialProducts : defaultProducts;
+  const products = initialProducts || [];
 
   return (
-    <section className="py-24 bg-gradient-to-b from-amber-50/50 to-white">
+    <section className="neo-band py-24 bg-gradient-to-b from-amber-50/50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -61,8 +61,8 @@ export function ProductsSection({ initialProducts }: ProductsSectionProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100"
+                whileHover={{ y: -3 }}
+                className="neo-surface neo-product group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100"
               >
                 {/* Image */}
                 <div className="relative h-56 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden">
@@ -130,7 +130,7 @@ export function ProductsSection({ initialProducts }: ProductsSectionProps) {
         >
           <a
             href="/catalog"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-full border-2 border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-all duration-300 hover:scale-105 shadow-lg"
+            className="neo-action inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-full border-2 border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-all duration-300 hover:scale-105 shadow-lg"
           >
             Lihat Semua Produk
             <ArrowRight className="w-5 h-5" />

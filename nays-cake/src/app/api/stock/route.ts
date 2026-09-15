@@ -1,135 +1,82 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-function awalHariIni(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+import { apiError, ApiError, requireAdmin } from "@/lib/api";
+import { audit, dayRange, jakartaDate, transaction } from "@/lib/business";
+import { z } from "zod";
+import { report } from "@/lib/reporting";
 
 export async function GET() {
   try {
-    const today = awalHariIni();
-    const entries = await prisma.stockEntry.findMany({
-      where: { date: { gte: today } },
-      include: { product: { include: { supplier: true } } },
-      orderBy: { createdAt: "desc" },
+    await requireAdmin();
+    const entries = await prisma.stockEntry.findMany({ where: { date: dayRange() }, include: { product: { include: { supplier: true } } }, orderBy: { createdAt: "desc" } });
+    const reconciliation = await report(dayRange().gte, dayRange().lt);
+    const rows = entries.map(e => {
+      const hargaJual = Number(e.price ?? e.product.sellingPrice), modal = Number(e.cost ?? e.product.costPrice);
+      const sudahSelesai = e.quantityRemaining !== null;
+      const terjual = sudahSelesai ? e.quantityIn - e.quantityRemaining! - e.quantityReturned - e.quantityDamaged : 0;
+      return { id: e.id, productId: e.productId, nama: e.product.name, supplier: e.product.supplier.name, supplierId: e.product.supplierId, hargaJual, modal, masuk: e.quantityIn, sisa: e.quantityRemaining, retur: e.quantityReturned, rusak: e.quantityDamaged, terjual: sudahSelesai ? terjual : null, omzet: sudahSelesai ? terjual * hargaJual : null, setoran: sudahSelesai ? terjual * modal : null, laba: sudahSelesai ? terjual * (hargaJual - modal) : null, sudahSelesai };
     });
-
-    let totalMasuk = 0, totalTerjual = 0, totalOmzet = 0, totalModal = 0, totalLaba = 0;
-    const perPemasok: Record<string, { nama: string; setoran: number; laba: number; terjual: number }> = {};
-
-    const rows = entries.map((e) => {
-      const masuk = e.quantityIn;
-      const sisa = e.quantityRemaining;
-      const hargaJual = Number(e.product.sellingPrice);
-      const modal = Number(e.product.costPrice);
-      const sudahSelesai = sisa !== null && sisa !== undefined;
-      const terjual = sudahSelesai ? Math.max(0, masuk - (sisa as number)) : 0;
-      const omzet = terjual * hargaJual;
-      const setoran = terjual * modal;
-      const laba = omzet - setoran;
-
-      if (sudahSelesai) {
-        totalMasuk += masuk; totalTerjual += terjual; totalOmzet += omzet;
-        totalModal += setoran; totalLaba += laba;
-        const pid = e.product.supplierId;
-        if (!perPemasok[pid]) perPemasok[pid] = { nama: e.product.supplier.name, setoran: 0, laba: 0, terjual: 0 };
-        perPemasok[pid].setoran += setoran;
-        perPemasok[pid].laba += laba;
-        perPemasok[pid].terjual += terjual;
-      } else {
-        totalMasuk += masuk;
+    const perPemasok = new Map<string, { nama: string; setoran: number; laba: number; terjual: number }>();
+    // Allocate reconciled totals across legacy multiple entries for the same day.
+    for (const r of rows) {
+      if (!r.sudahSelesai) continue;
+      const total = reconciliation.rows.find(total => total.productId === r.productId);
+      const dailyQuantity = rows.filter(other => other.productId === r.productId).reduce((s, other) => s + (other.terjual || 0), 0);
+      if (total && !total.pending && dailyQuantity > 0) {
+        const share = (r.terjual || 0) / dailyQuantity;
+        r.omzet = total.revenue * share; r.setoran = total.cost * share; r.laba = total.profit * share;
       }
-
-      return {
-        id: e.id, productId: e.productId, nama: e.product.name,
-        supplier: e.product.supplier.name, supplierId: e.product.supplierId,
-        hargaJual, modal, masuk,
-        sisa: sudahSelesai ? sisa : null,
-        terjual: sudahSelesai ? terjual : null,
-        omzet: sudahSelesai ? omzet : null,
-        setoran: sudahSelesai ? setoran : null,
-        laba: sudahSelesai ? laba : null,
-        sudahSelesai,
-      };
-    });
-
-    const setoranPemasok = Object.values(perPemasok).sort((a, b) => a.nama.localeCompare(b.nama));
-
-    return NextResponse.json({
-      tanggal: today.toISOString().slice(0, 10),
-      rows,
-      ringkasan: {
-        totalMasuk, totalTerjual, totalOmzet, totalModal, totalLaba,
-        jumlahEntry: rows.length,
-        belumIsiSisa: rows.filter((r) => !r.sudahSelesai).length,
-      },
-      setoranPemasok,
-    });
-  } catch (error) {
-    console.error("GET /api/stock error:", error);
-    return NextResponse.json({ error: "Gagal memuat stok harian" }, { status: 500 });
-  }
+    }
+    for (const r of rows) {
+      const s = perPemasok.get(r.supplierId) || { nama: r.supplier, setoran: 0, laba: 0, terjual: 0 };
+      s.setoran += r.setoran || 0; s.laba += r.laba || 0; s.terjual += r.terjual || 0;
+      perPemasok.set(r.supplierId, s);
+    }
+    return NextResponse.json({ tanggal: jakartaDate(), rows, ringkasan: {
+      totalMasuk: rows.reduce((s, r) => s + r.masuk, 0), totalTerjual: rows.reduce((s, r) => s + (r.terjual || 0), 0),
+      totalOmzet: rows.reduce((s, r) => s + (r.omzet || 0), 0), totalModal: rows.reduce((s, r) => s + (r.setoran || 0), 0),
+      totalLaba: rows.reduce((s, r) => s + (r.laba || 0), 0), jumlahEntry: rows.length, belumIsiSisa: rows.filter(r => !r.sudahSelesai).length,
+    }, setoranPemasok: [...perPemasok.values()] });
+  } catch (error) { return apiError(error); }
 }
 
 export async function POST(request: Request) {
   try {
-    const { productId, quantityIn, notes } = await request.json();
-    if (!productId || quantityIn === undefined || quantityIn === null) {
-      return NextResponse.json({ error: "productId dan quantityIn wajib diisi" }, { status: 400 });
-    }
-    const masuk = parseInt(String(quantityIn), 10);
-    if (isNaN(masuk) || masuk < 0 || masuk > 100000) {
-      return NextResponse.json({ error: "Jumlah masuk tidak valid" }, { status: 400 });
-    }
-    const product = await prisma.product.findUnique({ where: { id: productId } });
-    if (!product) return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
-
-    const today = awalHariIni();
-    const existing = await prisma.stockEntry.findFirst({
-      where: { productId, date: { gte: today } },
-      orderBy: { createdAt: "desc" },
+    const user = await requireAdmin();
+    const body = z.object({ productId: z.string().min(1), quantityIn: z.number().int().min(1).max(100000), notes: z.string().max(2000).optional() }).parse(await request.json());
+    const entry = await transaction(async tx => {
+      const p = await tx.product.findUnique({ where: { id: body.productId } });
+      if (!p?.isActive) throw new ApiError(400, "Produk tidak tersedia");
+      const closed = await tx.stockEntry.count({ where: { productId: p.id, date: dayRange(), quantityRemaining: { not: null } } });
+      if (closed) throw new ApiError(409, "Penutupan stok sudah dimulai hari ini");
+      const existing = await tx.stockEntry.findFirst({ where: { productId: p.id, date: dayRange() }, orderBy: { createdAt: "desc" } });
+      if (existing?.quantityRemaining != null) throw new ApiError(409, "Stok sudah ditutup hari ini");
+      const entry = existing ? await tx.stockEntry.update({ where: { id: existing.id }, data: { quantityIn: { increment: body.quantityIn }, notes: body.notes ?? existing.notes } }) : await tx.stockEntry.create({ data: { ...body, price: p.sellingPrice, cost: p.costPrice } });
+      await audit(tx, user.id, "STOCK_RECEIVED", entry.id, String(body.quantityIn));
+      return entry;
     });
-
-    let entry;
-    if (existing) {
-      entry = await prisma.stockEntry.update({
-        where: { id: existing.id },
-        data: { quantityIn: existing.quantityIn + masuk, notes: notes ?? existing.notes },
-      });
-    } else {
-      entry = await prisma.stockEntry.create({ data: { productId, quantityIn: masuk, notes } });
-    }
     return NextResponse.json({ entry }, { status: 201 });
-  } catch (error) {
-    console.error("POST /api/stock error:", error);
-    return NextResponse.json({ error: "Gagal menyimpan stok masuk" }, { status: 500 });
-  }
+  } catch (error) { return apiError(error); }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const { id, quantityRemaining } = await request.json();
-    if (!id || quantityRemaining === undefined || quantityRemaining === null) {
-      return NextResponse.json({ error: "id dan quantityRemaining wajib diisi" }, { status: 400 });
-    }
-    const sisa = parseInt(String(quantityRemaining), 10);
-    if (isNaN(sisa) || sisa < 0 || sisa > 100000) {
-      return NextResponse.json({ error: "Jumlah sisa tidak valid" }, { status: 400 });
-    }
-    const entry = await prisma.stockEntry.findUnique({ where: { id } });
-    if (!entry) return NextResponse.json({ error: "Entry tidak ditemukan" }, { status: 404 });
-    if (sisa > entry.quantityIn) {
-      return NextResponse.json({ error: `Sisa (${sisa}) tidak boleh lebih dari yang masuk (${entry.quantityIn}).` }, { status: 400 });
-    }
-    const updated = await prisma.stockEntry.update({
-      where: { id },
-      data: { quantityRemaining: sisa },
+    const user = await requireAdmin();
+    const count = z.number().int().min(0).max(100000);
+    const body = z.object({ id: z.string().min(1), quantityRemaining: count, quantityReturned: count.default(0), quantityDamaged: count.default(0) }).parse(await request.json());
+    const entry = await transaction(async tx => {
+      const current = await tx.stockEntry.findUnique({ where: { id: body.id } });
+      if (!current) throw new ApiError(404, "Stok tidak ditemukan");
+      if (jakartaDate(current.date) !== jakartaDate()) throw new ApiError(409, "Stok hari sebelumnya tidak dapat diubah");
+      const sold = await tx.saleItem.aggregate({ where: { productId: current.productId, sale: { saleDate: dayRange() } }, _sum: { quantity: true } });
+      const others = await tx.stockEntry.findMany({ where: { productId: current.productId, date: dayRange(), id: { not: body.id } } });
+      const otherClosedSold = others.reduce((s, e) => s + (e.quantityRemaining === null ? 0 : e.quantityIn - e.quantityRemaining - e.quantityReturned - e.quantityDamaged), 0);
+      const inferred = current.quantityIn - body.quantityRemaining - body.quantityReturned - body.quantityDamaged;
+      if (inferred < 0 || (!others.some(e => e.quantityRemaining === null) && inferred + otherClosedSold < (sold._sum.quantity || 0))) throw new ApiError(409, "Sisa, retur, dan rusak tidak sesuai dengan stok masuk atau penjualan tercatat");
+      const updated = await tx.stockEntry.update({ where: { id: body.id }, data: { quantityRemaining: body.quantityRemaining, quantityReturned: body.quantityReturned, quantityDamaged: body.quantityDamaged } });
+      await audit(tx, user.id, "STOCK_CLOSED", body.id, JSON.stringify(body));
+      return updated;
     });
-    return NextResponse.json({ entry: updated });
-  } catch (error) {
-    console.error("PATCH /api/stock error:", error);
-    return NextResponse.json({ error: "Gagal menyimpan sisa" }, { status: 500 });
-  }
+    return NextResponse.json({ entry });
+  } catch (error) { return apiError(error); }
 }

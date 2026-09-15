@@ -108,9 +108,6 @@ export default function CatalogPage() {
   const heroOpacity = useTransform(smoothY, [0, 0.8], [1, 0]);
   const heroScale = useTransform(smoothY, [0, 0.5], [1, 1.1]);
 
-  const bgElement1Y = useTransform(smoothY, [0, 1], ["0%", "50%"]);
-  const bgElement2Y = useTransform(smoothY, [0, 1], ["0%", "70%"]);
-  const bgElement3Y = useTransform(smoothY, [0, 1], ["0%", "40%"]);
 
   useEffect(() => {
     setMounted(true);
@@ -158,7 +155,7 @@ export default function CatalogPage() {
   const getCategoryDisplay = (category: string) => categoryDisplay[category] || { emoji: "🍽️", label: category };
 
   return (
-    <div ref={containerRef} className="min-h-screen">
+    <div ref={containerRef} className="neo-page min-h-screen">
       {/* Mobile/Tablet Sidebar - Show at top */}
       <div className="lg:hidden">
         {/* Background Image for Mobile */}
@@ -185,26 +182,26 @@ export default function CatalogPage() {
         </div>
         
         {/* Mobile Sidebar Content */}
-        <div className="bg-white shadow-lg p-4 mx-4 -mt-8 rounded-2xl relative z-10 mb-4">
+        <div className="neo-catalog-filters p-4 mx-4 -mt-8 rounded-2xl relative z-10 mb-4">
           <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-full transition-colors text-xs mb-3">
             <ArrowLeft className="w-3 h-3" /><span>Kembali</span>
           </Link>
           <h1 className="text-lg font-bold text-gray-900 mb-2">Katalog Produk</h1>
           <div className="relative mb-2">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input type="text" placeholder="Cari produk..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            <input aria-label="Cari produk" type="text" placeholder="Cari produk..." value={search} onChange={(e) => setSearch(e.target.value)} className="neo-control w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[10px] font-medium text-gray-700 mb-1">Kategori</label>
-              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
+              <select aria-label="Kategori" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="neo-control w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
                 <option value="">Semua</option>
                 {categories.map((cat) => <option key={cat} value={cat}>{getCategoryDisplay(cat).emoji} {getCategoryDisplay(cat).label}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-[10px] font-medium text-gray-700 mb-1">Supplier</label>
-              <select value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
+              <select aria-label="Supplier" value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)} className="neo-control w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
                 <option value="">Semua</option>
                 {suppliers.map((sup) => <option key={sup.id} value={sup.name}>{sup.name}</option>)}
               </select>
@@ -212,8 +209,8 @@ export default function CatalogPage() {
           </div>
           <div className="mt-2">
             <label className="block text-[10px] font-medium text-gray-700 mb-1">💰 Harga: Rp {priceRange[0].toLocaleString("id-ID")} - Rp {priceRange[1].toLocaleString("id-ID")}</label>
-            <input type="range" min="1000" max="20000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1 bg-gray-200 rounded-lg accent-amber-500" />
-            <input type="range" min="1000" max="20000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1 bg-gray-200 rounded-lg accent-amber-500 mt-1" />
+            <input aria-label="Harga minimum" type="range" min="1000" max="20000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1 bg-gray-200 rounded-lg accent-amber-500" />
+            <input aria-label="Harga maksimum" type="range" min="1000" max="20000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1 bg-gray-200 rounded-lg accent-amber-500 mt-1" />
           </div>
           <p className="text-[10px] text-gray-600 mt-2">Menampilkan <span className="font-bold text-amber-600">{products.length}</span> produk</p>
         </div>
@@ -247,9 +244,9 @@ export default function CatalogPage() {
       {/* Desktop Sidebar Content - Parallax Moving */}
       <motion.aside 
         style={mounted ? { y: smoothSidebarY } : {}}
-        className="hidden lg:block w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen p-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4 z-40"
+        className="neo-catalog-sidebar hidden lg:block w-80 xl:w-96 lg:fixed lg:top-0 lg:left-0 lg:h-screen p-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4 z-40"
       >
-        <div className="relative bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-4 sm:p-6">
+        <div className="neo-catalog-filters relative p-4 sm:p-6 rounded-lg">
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-full transition-colors text-sm mb-4">
             <ArrowLeft className="w-4 h-4" /><span>Kembali</span>
           </Link>
@@ -259,12 +256,12 @@ export default function CatalogPage() {
           </div>
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input type="text" placeholder="Cari produk..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            <input aria-label="Cari produk" type="text" placeholder="Cari produk..." value={search} onChange={(e) => setSearch(e.target.value)} className="neo-control w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div className="mb-3">
             <label className="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
             <div className="relative">
-              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-xs appearance-none">
+              <select aria-label="Kategori" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="neo-control w-full px-3 py-2 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-xs appearance-none">
                 <option value="">🍽️ Semua</option>
                 {categories.map((cat) => {
                   const display = getCategoryDisplay(cat);
@@ -277,7 +274,7 @@ export default function CatalogPage() {
           <div className="mb-3">
             <label className="block text-xs font-medium text-gray-700 mb-1">Supplier</label>
             <div className="relative">
-              <select value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)} className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-xs appearance-none">
+              <select aria-label="Supplier" value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)} className="neo-control w-full px-3 py-2 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-xs appearance-none">
                 <option value="">Semua</option>
                 {suppliers.map((sup) => <option key={sup.id} value={sup.name}>{sup.name}</option>)}
               </select>
@@ -287,8 +284,8 @@ export default function CatalogPage() {
           <div className="mb-3">
             <label className="block text-xs font-medium text-gray-700 mb-1">💰 Harga: Rp {priceRange[0].toLocaleString("id-ID")} - Rp {priceRange[1].toLocaleString("id-ID")}</label>
             <div className="space-y-2">
-              <input type="range" min="1000" max="20000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
-              <input type="range" min="1000" max="20000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+              <input aria-label="Harga minimum" type="range" min="1000" max="20000" step="500" value={priceRange[0]} onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
+              <input aria-label="Harga maksimum" type="range" min="1000" max="20000" step="500" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])} className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500" />
               <div className="flex justify-between text-[10px] text-gray-500"><span>Rp 1.000</span><span>Rp 20.000</span></div>
             </div>
           </div>
@@ -304,13 +301,10 @@ export default function CatalogPage() {
         <div ref={parallaxRef} className="relative overflow-hidden">
           <img src="/catalog-bg.jpg" alt="Catalog Background" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-br from-amber-50/70 via-white/60 to-orange-50/70" />
-          <motion.div style={{ y: bgElement1Y }} className="absolute -top-20 -left-20 w-80 h-80 bg-amber-200/30 rounded-full blur-3xl animate-pulse" />
-          <motion.div style={{ y: bgElement2Y }} className="absolute top-40 -right-20 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
-          <motion.div style={{ y: bgElement3Y }} className="absolute top-80 left-1/3 w-[500px] h-[500px] bg-yellow-200/20 rounded-full blur-3xl" />
           <motion.div style={{ y: heroY, opacity: heroOpacity, scale: heroScale }} className="relative py-8 sm:py-12 md:py-16 text-center px-4">
             <motion.h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
               <span className="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">Kue Masih Segar</span>
-              <br className="hidden sm:block" />
+              <br />
               <span className="text-gray-700 text-xl sm:text-2xl md:text-3xl lg:text-4xl">Langsung dari Supplier</span>
             </motion.h2>
             <motion.p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.2 }}>
@@ -320,7 +314,7 @@ export default function CatalogPage() {
         </div>
 
         {/* Products Grid */}
-        <div className="p-4 sm:p-6 lg:py-8 bg-gradient-to-b from-yellow-50/50 to-amber-50/50">
+        <div className="neo-band p-4 sm:p-6 lg:py-8 bg-gradient-to-b from-yellow-50/50 to-amber-50/50">
           {loading ? (
             <div className="flex items-center justify-center py-16 sm:py-20"><div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-amber-500 border-t-transparent"></div></div>
           ) : currentProducts.length === 0 ? (
@@ -333,7 +327,7 @@ export default function CatalogPage() {
                   const stockStatus = getStockStatus(product.stock, product.minStock);
                   const catDisplay = getCategoryDisplay(product.category);
                   return (
-                    <motion.div key={product.id} onClick={() => setSelectedProduct(product)} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -5, boxShadow: "0 20px 40px -15px rgba(251, 146, 60, 0.3)" }} className="bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group cursor-pointer">
+                    <motion.div key={product.id} onClick={() => setSelectedProduct(product)} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.5) }} whileHover={{ y: -3 }} className="neo-surface neo-product bg-white rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group cursor-pointer">
                       <div className="relative aspect-[4/3] sm:aspect-square bg-gradient-to-br from-amber-100 to-orange-100 overflow-hidden">
                         {product.imageUrl ? (
                           <ProductImage src={product.imageUrl} alt={product.name} sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" />
@@ -343,8 +337,8 @@ export default function CatalogPage() {
                         <motion.div className="absolute top-2 right-2 sm:top-3 sm:right-3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + index * 0.02 }}>
                           <span className={`px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium rounded-full ${stockStatus.class}`}>{stockStatus.label}</span>
                         </motion.div>
-                        <motion.div className="absolute top-2 left-2 sm:top-3 sm:left-3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + index * 0.02 }}>
-                          <span className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium bg-white/90 text-gray-700 rounded-full backdrop-blur-sm">{catDisplay.emoji} {catDisplay.label}</span>
+                        <motion.div className="absolute top-2 left-2 sm:top-3 sm:left-3 max-w-[calc(100%_-_88px)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + index * 0.02 }}>
+                          <span title={catDisplay.label} className="block truncate px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium bg-white/90 text-gray-700 rounded-full backdrop-blur-sm">{catDisplay.emoji} {catDisplay.label}</span>
                         </motion.div>
                         {product.isAvailable && (
                           <motion.div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4" animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
@@ -366,11 +360,11 @@ export default function CatalogPage() {
               </div>
               {totalPages > 1 && (
                 <motion.div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-6 sm:mt-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-1.5 sm:p-2 rounded-lg bg-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center"><ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" /></motion.button>
+                  <motion.button aria-label="Halaman sebelumnya" title="Halaman sebelumnya" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="neo-action p-1.5 sm:p-2 rounded-lg bg-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center"><ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" /></motion.button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <motion.button key={page} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCurrentPage(page)} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg font-medium text-sm sm:text-base transition-all min-w-[32px] sm:min-w-[40px] flex items-center justify-center ${currentPage === page ? "bg-amber-500 text-white shadow" : "bg-white shadow hover:shadow-md"}`}>{page}</motion.button>
+                    <motion.button aria-current={currentPage === page ? "page" : undefined} aria-label={"Halaman " + page} key={page} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCurrentPage(page)} className={`neo-action w-8 h-8 sm:w-10 sm:h-10 rounded-lg font-medium text-sm sm:text-base transition-all min-w-[32px] sm:min-w-[40px] flex items-center justify-center ${currentPage === page ? "bg-amber-500 text-white shadow" : "bg-white shadow hover:shadow-md"}`}>{page}</motion.button>
                   ))}
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-1.5 sm:p-2 rounded-lg bg-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center"><ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" /></motion.button>
+                  <motion.button aria-label="Halaman berikutnya" title="Halaman berikutnya" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="neo-action p-1.5 sm:p-2 rounded-lg bg-white shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center"><ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" /></motion.button>
                 </motion.div>
               )}
             </>
@@ -416,9 +410,9 @@ export default function CatalogPage() {
               </div>
 
               <div className="p-6 overflow-y-auto">
-                <div className="flex justify-between items-start mb-4 gap-4">
+                <div className="neo-modal-heading flex justify-between items-start mb-4 gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedProduct.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1 break-words">{selectedProduct.name}</h2>
                     <p className="text-gray-500 font-medium">Mitra: {selectedProduct.supplier}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
@@ -429,7 +423,7 @@ export default function CatalogPage() {
                   </div>
                 </div>
 
-                <div className="bg-amber-50 rounded-2xl p-4 mb-6">
+                <div className="border-t border-gray-200 pt-4 mb-6">
                   <h4 className="text-sm font-semibold text-amber-900 mb-2">Informasi Produk</h4>
                   <div className="space-y-2 text-sm text-gray-700">
                     <div className="flex justify-between border-b border-amber-200/50 pb-2">
