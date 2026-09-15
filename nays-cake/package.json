@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/operations.test.cjs tests/migration.test.cjs",
+    "test": "node --test tests/operations.test.cjs tests/migration.test.cjs tests/chat.test.cjs",
     "test:bot": "node --test tests/bot.test.cjs tests/ai.test.cjs",
     "test:all": "node --test tests/*.test.cjs",
     "postinstall": "prisma generate"

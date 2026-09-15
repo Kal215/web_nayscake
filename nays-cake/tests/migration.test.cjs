@@ -9,7 +9,7 @@ test('all migrations preserve legacy rows and enforce order replay uniqueness', 
   try {
     const root = path.resolve(__dirname, '../prisma/migrations');
     const migrations = fs.readdirSync(root).filter(n => fs.statSync(path.join(root, n)).isDirectory()).sort();
-    for (const name of migrations.slice(0, -1)) await db.exec(fs.readFileSync(path.join(root, name, 'migration.sql'), 'utf8'));
+    for (const name of migrations.filter(n => n < "20260914000000_reliable_operations")) await db.exec(fs.readFileSync(path.join(root, name, 'migration.sql'), 'utf8'));
     await db.exec(`
       INSERT INTO suppliers (id, name, "updatedAt") VALUES ('s', 'Supplier Uji', NOW());
       INSERT INTO products (id, "supplierId", name, slug, "costPrice", "sellingPrice", "updatedAt") VALUES ('p', 's', 'Risol', 'risol', 1000, 2000, NOW());
@@ -17,7 +17,7 @@ test('all migrations preserve legacy rows and enforce order replay uniqueness', 
       INSERT INTO orders (id, "orderNumber", "totalAmount", "updatedAt") VALUES ('old', 'NAY-0001', 4000, NOW());
       INSERT INTO order_items (id, "orderId", "productId", "productName", quantity, price, subtotal) VALUES ('item', 'old', 'p', 'Risol', 2, 2000, 4000);
     `);
-    await db.exec(fs.readFileSync(path.join(root, migrations.at(-1), 'migration.sql'), 'utf8'));
+    for (const name of migrations.filter(n => n >= '20260914000000_reliable_operations')) await db.exec(fs.readFileSync(path.join(root, name, 'migration.sql'), 'utf8'));
     assert.equal((await db.query('SELECT COUNT(*)::int AS n FROM orders')).rows[0].n, 1);
     const stock = (await db.query('SELECT * FROM stock_entries')).rows[0];
     assert.equal(Number(stock.price), 2000); assert.equal(Number(stock.cost), 1000);
