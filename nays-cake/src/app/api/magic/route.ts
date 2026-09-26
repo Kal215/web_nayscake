@@ -8,19 +8,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ status: "Akses Ditolak" }, { status: 401 });
     }
 
-    // Ambil 5 kue acak
     const products = await prisma.product.findMany({ take: 5 });
-    const ids = products.map((p: any) => p.id);
+    const stockData = products.map((p: any) => ({
+      productId: p.id,
+      quantityIn: 50,
+      notes: "Suntikan Uji Coba (AI)"
+    }));
     
-    // Suntikkan stok 50 buah dan buat tersedia
+    await prisma.stockEntry.createMany({ data: stockData });
+
+    const ids = products.map((p: any) => p.id);
     await prisma.product.updateMany({
       where: { id: { in: ids } },
-      data: { isAvailable: true, stock: 50 }
+      data: { isActive: true }
     });
 
     return NextResponse.json({ 
       success: true, 
-      pesan: "Berhasil menyuntikkan 50 stok ke 5 kue pertama!",
+      pesan: "Berhasil memasukkan pasokan 50 buah ke 5 kue pertama!",
       kueTersedia: products.map((p: any) => p.name) 
     });
   } catch(e: any) {
