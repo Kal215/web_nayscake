@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "fra
 import { Search, Filter, MessageCircle, Package, ChevronLeft, ChevronRight, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import FloatingCart from "@/components/FloatingCart";
 
 interface Product {
   id: string;
@@ -350,9 +351,9 @@ export default function CatalogPage() {
                         <motion.h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-0.5 sm:mb-1 group-hover:text-amber-600 transition-colors line-clamp-1 sm:line-clamp-none" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{product.name}</motion.h3>
                         <motion.p className="text-xs sm:text-sm text-gray-500 mb-1 sm:mb-2 line-clamp-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{product.supplier}</motion.p>
                         <motion.div className="text-lg sm:text-xl md:text-2xl font-bold text-amber-600 mb-1 sm:mb-2" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}>Rp {product.sellingPrice.toLocaleString("id-ID")}</motion.div>
-                        <motion.a onClick={(e) => e.stopPropagation()} href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}`} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 min-h-[44px] ${product.isAvailable ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}>
-                          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" /><span>{product.isAvailable ? "Pesan via WhatsApp" : "Stok Habis"}</span>
-                        </motion.a>
+                        <motion.button disabled={!product.isAvailable} onClick={(e) => { e.stopPropagation(); if (product.isAvailable) window.dispatchEvent(new CustomEvent("ADD_TO_CART", { detail: { id: product.id, name: product.name, price: product.sellingPrice } })); }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 min-h-[44px] ${product.isAvailable ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:shadow-lg" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}>
+                          <Package className="w-4 h-4 sm:w-5 sm:h-5" /><span>{product.isAvailable ? "Tambah Keranjang" : "Stok Habis"}</span>
+                        </motion.button>
                       </div>
                     </motion.div>
                   );
