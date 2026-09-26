@@ -8,6 +8,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ status: "Akses Ditolak" }, { status: 401 });
     }
 
+    // Ekstrak nama database dari DATABASE_URL
+    const dbUrl = process.env.DATABASE_URL || "";
+    let dbName = "Tidak Terdeteksi";
+    if (dbUrl) {
+      const parts = dbUrl.split("?");
+      const path = parts[0].split("/");
+      dbName = path[path.length - 1];
+    }
+
     const products = await prisma.product.findMany({ take: 5 });
     const stockData = products.map((p: any) => ({
       productId: p.id,
@@ -25,7 +34,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      pesan: "Berhasil memasukkan pasokan 50 buah ke 5 kue pertama!",
+      pesan: "Berhasil!",
+      namaDatabaseNeon: dbName,
       kueTersedia: products.map((p: any) => p.name) 
     });
   } catch(e: any) {
