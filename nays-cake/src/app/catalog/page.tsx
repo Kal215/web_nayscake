@@ -461,6 +461,7 @@ export default function CatalogPage() {
           </>
         )}
       </AnimatePresence>
+      <FloatingCart />
     </div>
   );
 }
