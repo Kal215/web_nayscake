@@ -16,10 +16,11 @@ datasource db {
 // ============================================================
 model User {
   id        String   @id @default(cuid())
+  clerkId   String?  @unique
   name      String
   email     String   @unique
-  password  String
-  role      UserRole @default(ADMIN)
+  password  String?
+  role      UserRole @default(CUSTOMER)
   imageUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -33,6 +34,7 @@ model User {
 enum UserRole {
   SUPER_ADMIN
   ADMIN
+  CUSTOMER
 }
 
 // ============================================================
