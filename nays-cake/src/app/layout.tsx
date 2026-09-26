@@ -19,7 +19,6 @@ export default function RootLayout({
       <html lang="id" className="h-full antialiased">
         <body className="min-h-full flex flex-col relative">
           
-          <AuthButton />
 
           {children}
           {process.env.CHAT_ENABLED === "true" && <ChatWidget />}
