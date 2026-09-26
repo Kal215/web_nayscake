@@ -2,10 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, X, Plus, Minus, MessageCircle } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 export default function FloatingCart() {
   const [isOpen, setIsOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
+  
+  // Impor Intelijen dari Clerk
+  const { user, isSignedIn } = useUser();
+  const clerk = useClerk();
 
   useEffect(() => {
     const handleAdd = (e: any) => {
@@ -27,8 +32,20 @@ export default function FloatingCart() {
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
+
+    // 🛡️ LAPISAN KEAMANAN ENTERPRISE: Cegat sebelum masuk WA!
+    if (!isSignedIn) {
+      clerk.openSignIn(); // Munculkan modal popup elegan
+      return; // Batalkan perpindahan halaman
+    }
+
+    // 👤 Tarik Identitas Resmi Google/Clerk Pelanggan
+    const nama = user?.fullName || user?.firstName || "Pelanggan Setia";
+    const email = user?.primaryEmailAddress?.emailAddress || "Tidak ada email";
+    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}`;
+
     const pesan = cart.map((i) => `▪ ${i.qty}x ${i.name}`).join('%0A');
-    const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;
+    const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;
     const nomorBot = "6285703586056";
     window.open(`https://wa.me/${nomorBot}?text=${teks}`, "_blank");
   };
