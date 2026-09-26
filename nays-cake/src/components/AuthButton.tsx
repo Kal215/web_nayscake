@@ -9,14 +9,12 @@ export default function AuthButton() {
   return (
     <div className="flex items-center justify-center z-[50]">
       {!isSignedIn ? (
-        <button 
-          onClick={() => {
-            if (isLoaded) {
-              openSignIn();
-            } else {
-              alert("Sistem keamanan Clerk sedang dimuat ke HP Anda. Mohon tunggu 3 detik lalu klik lagi.");
-            }
-          }}
+        <button
+          onClick={() => 
+            isLoaded 
+              ? openSignIn({ fallbackRedirectUrl: '/auth-sync' }) 
+              : alert("Sistem keamanan sedang dimuat, mohon tunggu 3 detik dan coba lagi.")
+          }
           className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition-all text-sm md:text-base border-2 border-white/20 hover:scale-105"
         >
           Masuk / Daftar
