@@ -1,20 +1,24 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Lindungi seluruh rute dashboard
 const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   if (isDashboardRoute(req)) {
-    // 1. Jika belum login, tendang ke halaman login
-    auth().protect();
+    // Di Clerk V5, auth() sekarang mengembalikan Promise, jadi harus pakai "await"
+    const authObject = await auth();
 
-    // 2. Jika sudah login, cek apakah dia admin?
-    const role = auth().sessionClaims?.metadata?.role;
+    // 1. Jika belum login sama sekali, tendang ke halaman login Clerk
+    if (!authObject.userId) {
+      const signInUrl = new URL("/", req.url);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // 2. Jika sudah login, mari periksa ID Card (Metadata) miliknya
+    const role = authObject.sessionClaims?.metadata?.role;
     
     if (role !== "admin") {
-      // Jika BUKAN admin (contoh: pembeli biasa yang coba-coba akses url /dashboard),
-      // Tendang kembali ke halaman utama katalog!
+      // Jika ternyata dia pembeli (role bukan admin), tendang ke katalog!
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
