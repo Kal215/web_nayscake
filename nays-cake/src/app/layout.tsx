@@ -20,7 +20,10 @@ export default function RootLayout({
         <body className="min-h-full flex flex-col relative">
           
 
-          {children}
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[9999]">
+          <AuthButton />
+        </div>
+        {children}
           {process.env.CHAT_ENABLED === "true" && <ChatWidget />}
         </body>
       </html>

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronDown, MessageCircle, ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import AuthButton from "@/components/AuthButton";
+
 
 export function HeroSection() {
   return (
@@ -95,8 +95,6 @@ export function HeroSection() {
             <MessageCircle className="w-5 h-5 text-green-500" />
             <span>Pesan Sekarang</span>
           </a>
-          
-          <AuthButton />
         </motion.div>
 
         {/* Stats Preview */}
