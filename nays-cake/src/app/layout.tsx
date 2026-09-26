@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ChatWidget } from "@/components/chat/chat-widget";
+import AuthButton from "@/components/AuthButton";
 
 export const metadata: Metadata = {
   title: "Nay's Cake Website",
@@ -18,19 +19,7 @@ export default function RootLayout({
       <html lang="id" className="h-full antialiased">
         <body className="min-h-full flex flex-col relative">
           
-          {/* Tombol Auth Melayang Global */}
-          <div className="absolute top-4 right-4 z-[9999]">
-            <SignedOut>
-              <div className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-full font-medium shadow-lg transition-all">
-                <SignInButton mode="modal">Login Admin</SignInButton>
-              </div>
-            </SignedOut>
-            <SignedIn>
-              <div className="bg-white p-1 rounded-full shadow-lg border border-gray-200">
-                <UserButton />
-              </div>
-            </SignedIn>
-          </div>
+          <AuthButton />
 
           {children}
           {process.env.CHAT_ENABLED === "true" && <ChatWidget />}
