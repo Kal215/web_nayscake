@@ -27,7 +27,7 @@ export default function RootLayout({
             </SignedOut>
             <SignedIn>
               <div className="bg-white p-1 rounded-full shadow-lg border border-gray-200">
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </div>
             </SignedIn>
           </div>
