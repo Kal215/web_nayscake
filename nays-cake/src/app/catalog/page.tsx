@@ -6,6 +6,7 @@ import { Search, Filter, MessageCircle, Package, ChevronLeft, ChevronRight, Arro
 import Image from "next/image";
 import Link from "next/link";
 import FloatingCart from "@/components/FloatingCart";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 interface Product {
   id: string;
@@ -66,6 +67,28 @@ function ProductImage({ src, alt, sizes }: { src: string; alt: string; sizes?: s
 }
 
 export default function CatalogPage() {
+  const { user, isSignedIn } = useUser();
+  const clerk = useClerk();
+
+  const handleDirectCheckout = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!product.isAvailable) return;
+    
+    // 🛡️ LAPISAN KEAMANAN: Cegat jika belum login
+    if (!isSignedIn) {
+      clerk.openSignIn();
+      return;
+    }
+    
+    const nama = user?.fullName || user?.firstName || "Pelanggan Setia";
+    const email = user?.primaryEmailAddress?.emailAddress || "Tidak ada email";
+    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}`;
+    
+    const teks = `Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}%0A%0A${infoPelanggan}`;
+    window.open(`https://wa.me/6285126023250?text=${teks}`, "_blank");
+  };
+
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -442,11 +465,8 @@ export default function CatalogPage() {
                   </div>
                 </div>
 
-                <a
-                  href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(selectedProduct.name)}%20dari%20${encodeURIComponent(selectedProduct.supplier)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  onClick={(e) => handleDirectCheckout(e, selectedProduct!)}
                   className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-base transition-all duration-300 shadow-lg ${
                     selectedProduct.isAvailable 
                       ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-green-500/30 hover:-translate-y-0.5" 
@@ -455,9 +475,9 @@ export default function CatalogPage() {
                 >
                   <MessageCircle className="w-5 h-5" />
                   <span>{selectedProduct.isAvailable ? "Pesan Sekarang via WhatsApp" : "Maaf, Stok Habis"}</span>
-                </a>
-              </div>
-            </motion.div>
+                </button>
+                </div>
+              </motion.div>
           </>
         )}
       </AnimatePresence>
