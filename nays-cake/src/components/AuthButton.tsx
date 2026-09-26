@@ -5,10 +5,10 @@ import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 export default function AuthButton() {
   const { isLoaded, isSignedIn } = useAuth();
 
-  // Jika Clerk belum selesai memuat, tampilkan tombol loading bayangan agar layout tidak melompat
-  if (!isLoaded) return (
-     <div className="w-[140px] h-[40px] bg-gray-200 animate-pulse rounded-full"></div>
-  );
+  // PENGAMANAN DIHAPUS: Tombol dipaksa tampil walau Clerk sedang loading
+  // if (!isLoaded) return (
+  //    <div className="w-[140px] h-[40px] bg-gray-200 animate-pulse rounded-full"></div>
+  // );
 
   return (
     <div className="flex items-center justify-center z-[50]">
