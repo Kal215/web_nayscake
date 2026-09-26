@@ -26,8 +26,8 @@ export async function POST(req: Request) {
     return new Response('Akses Ditolak: Sidik Jari Tidak Lengkap', { status: 400 });
   }
 
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
+  const body = await req.text();
+  const payload = JSON.parse(body);
 
   // 3. Verifikasi Sidik Jari Asli dari Clerk
   const wh = new Webhook(WEBHOOK_SECRET);
