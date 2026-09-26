@@ -4,9 +4,10 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
+  const prisma = new PrismaClient();
+
   // 1. Ambil Kunci Rahasia
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
