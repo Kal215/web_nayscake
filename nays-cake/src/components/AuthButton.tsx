@@ -53,7 +53,7 @@ export default function AuthButton() {
           className="neo-btn-raised group flex items-center justify-center gap-2.5 px-6 py-2.5 md:px-8 md:py-3 rounded-full font-bold cursor-pointer"
         >
           <LogIn className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:-translate-x-1" />
-          <span className="text-sm md:text-base tracking-wide">Masuk / Daftar</span>
+          <span className="text-sm md:text-base tracking-wide">Login</span>
         </button>
       ) : (
         // KONDISI 2: Sudah Login -> Wadah Utama Tenggelam ke Dalam
