@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Daftar hitam: rute yang haram diakses tanpa login
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/catalog(.*)",
@@ -8,15 +7,14 @@ const isProtectedRoute = createRouteMatcher([
   "/api/dashboard(.*)"
 ]);
 
-export default clerkMiddleware((auth, req) => {
-  // Jika pengunjung mencoba masuk rute terlarang
+// Tambahkan async di sini
+export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    // protect() akan menolak akses dan melemparnya ke halaman SignIn Clerk
-    auth().protect();
+    // Tambahkan await untuk Promise Clerk V7
+    await (await auth()).protect();
   }
 });
 
-// Wajib: Menjaga semua rute
 export const config = {
   matcher: [
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
