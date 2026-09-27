@@ -50,7 +50,7 @@ export default function AuthButton() {
         // KONDISI 1: Belum Login -> Tombol Utama Menonjol
         <button
           onClick={() => openSignIn({ forceRedirectUrl: '/auth-sync' })}
-          className="neo-btn-raised group flex items-center justify-center gap-2.5 px-6 py-2.5 md:px-8 md:py-3 rounded-full font-bold cursor-pointer"
+          className="neo-btn-raised group flex items-center justify-center gap-2.5 px-4 py-2 md:px-5 md:py-2 rounded-full font-bold cursor-pointer"
         >
           <LogIn className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:-translate-x-1" />
           <span className="text-sm md:text-base tracking-wide">Login</span>
@@ -60,15 +60,24 @@ export default function AuthButton() {
         <div className="neo-btn-inset flex items-center gap-2 md:gap-3 px-2 py-1.5 md:px-3 md:py-2 rounded-full">
           
           {isAdmin ? (
-            // Tombol Dasbor Admin -> Menonjol dari dalam cekungan
-            <Link 
-              href="/dashboard" 
-              className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-bold"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              <span className="hidden sm:inline tracking-wide">Dashboard Admin</span>
-              <span className="inline sm:hidden tracking-wide">Admin</span>
-            </Link>
+            // Tombol Dasbor & Katalog untuk Admin
+            <>
+              <Link 
+                href="/dashboard" 
+                className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-bold"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <span className="hidden sm:inline tracking-wide">Dashboard</span>
+              </Link>
+              <Link 
+                href="/catalog" 
+                className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold"
+              >
+                <Store className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <span className="hidden sm:inline tracking-wide">Katalog</span>
+                <span className="inline sm:hidden">Katalog</span>
+              </Link>
+            </>
           ) : (
             // Tombol Pelanggan -> Menonjol dari dalam cekungan
             <Link 
