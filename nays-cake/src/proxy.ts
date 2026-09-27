@@ -7,11 +7,15 @@ const isProtectedRoute = createRouteMatcher([
   "/api/dashboard(.*)"
 ]);
 
-// Tambahkan async di sini
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    // Tambahkan await untuk Promise Clerk V7
-    await (await auth()).protect();
+    // Tarik identitas dan fungsi pengusir secara asinkron
+    const { userId, redirectToSignIn } = await auth();
+    
+    // Jika tidak ada tiket login, usir ke halaman login!
+    if (!userId) {
+      return redirectToSignIn({ returnBackUrl: req.url });
+    }
   }
 });
 
