@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -37,13 +37,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ children }: SidebarProps) {
+  const { signOut } = useClerk();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { count } = usePesananBaru(15000);
   const chatCount = useUnreadChats();
 
   const handleLogout = async () => {
-    await signOut({ redirectTo: "/login" });
+    await signOut({ redirectUrl: "/" });
   };
 
   return (
