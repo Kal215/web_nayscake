@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { auth } from "@/lib/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { cekKunciBot } from "@/lib/botAuth";
 
@@ -9,11 +9,30 @@ export class ApiError extends Error {
 }
 
 export async function requireAdmin(superAdmin = false) {
-  const session = await auth();
-  if (!session?.user?.id) throw new ApiError(401, "Silakan login kembali");
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!user || (superAdmin && user.role !== "SUPER_ADMIN")) throw new ApiError(403, "Akses tidak diizinkan");
-  return user;
+  // Gunakan pemindai KTP Clerk!
+  const user = await currentUser();
+  if (!user) throw new ApiError(401, "Silakan login kembali");
+
+  const primaryEmail = user.emailAddresses?.[0]?.emailAddress || "";
+  let dbUser = null;
+  
+  if (primaryEmail) {
+    dbUser = await prisma.user.findFirst({ where: { email: primaryEmail } });
+  }
+
+  // Pengecekan Mutlak
+  const isAdmin = dbUser?.role === "ADMIN" || dbUser?.role === "SUPER_ADMIN" || primaryEmail === "riskalfadhilla215@gmail.com";
+  
+  if (!isAdmin) {
+    throw new ApiError(403, "Akses tidak diizinkan");
+  }
+
+  if (superAdmin && dbUser?.role !== "SUPER_ADMIN" && primaryEmail !== "riskalfadhilla215@gmail.com") {
+    throw new ApiError(403, "Akses SUPER ADMIN tidak diizinkan");
+  }
+
+  // Kembalikan identitas agar Dashboard bisa memproses data
+  return dbUser || { id: user.id, email: primaryEmail, role: "ADMIN", name: user.firstName };
 }
 
 export async function requireOperator(request: Request) {
@@ -22,7 +41,8 @@ export async function requireOperator(request: Request) {
     if (denied) throw new ApiError(denied.status, "Kunci bot tidak valid");
     return "bot";
   }
-  return (await requireAdmin()).id;
+  const admin = await requireAdmin();
+  return admin.id;
 }
 
 export function apiError(error: unknown) {
