@@ -53,5 +53,5 @@ export function apiError(error: unknown) {
     if (error.code === "P2025") return NextResponse.json({ error: "Data tidak ditemukan" }, { status: 404 });
   }
   console.error("API error", error);
-  return NextResponse.json({ error: "Gagal memproses permintaan" }, { status: 500 });
+  return NextResponse.json({ error: "Gagal memproses permintaan", msg: error instanceof Error ? error.message : String(error) }, { status: 500 });
 }
