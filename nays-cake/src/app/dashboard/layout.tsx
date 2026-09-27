@@ -7,25 +7,30 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Membaca KTP Baru (Clerk)
   const user = await currentUser();
   
   if (!user) {
     redirect("/");
   }
 
-  const primaryEmail = user.emailAddresses[0]?.emailAddress;
+  const primaryEmail = user.emailAddresses?.[0]?.emailAddress || "";
+  let dbUser = null;
 
-  // Membaca pangkat dari Database NeonDB
-  const dbUser = await prisma.user.findFirst({
-    where: { email: primaryEmail }
-  });
+  // Pelindung Anti-Ledakan (Try-Catch) agar aplikasi tidak mati jika koneksi DB bermasalah
+  if (primaryEmail) {
+    try {
+      dbUser = await prisma.user.findFirst({
+        where: { email: primaryEmail }
+      });
+    } catch (error) {
+      console.error("Gagal membaca dari NeonDB:", error);
+    }
+  }
 
-  // Proteksi Ganda (Bypass khusus untuk email Anda agar tidak pernah terkunci)
+  // Cek pangkat Admin
   const isAdmin = dbUser?.role === "ADMIN" || primaryEmail === "riskalfadhilla215@gmail.com";
 
   if (!isAdmin) {
-    // Jika ada Pembeli Nakal yang mencoba mengetik /dashboard, mereka akan tertendang!
     redirect("/");
   }
 
