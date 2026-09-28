@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { MessageCircle, X, Headset, LogOut } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { modeLabel } from "@/lib/chat-contract";
@@ -8,10 +9,12 @@ import { ChatComposer, ChatThread } from "./chat-thread";
 
 export function ChatWidget() {
   const pathname = usePathname();
+  const { isSignedIn } = useUser();
+  const clerk = useClerk();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const hidden = pathname.startsWith("/dashboard") || pathname.startsWith("/login");
-  const chat = useChat(open && !hidden ? "/api/chat" : null, true);
+  const chat = useChat(open && !hidden && isSignedIn ? "/api/chat" : null, true);
   useEffect(() => { if (open) document.getElementById("chat-close")?.focus(); }, [open]);
   const close = () => { setOpen(false); button.current?.focus(); };
   if (hidden) return null;
@@ -24,13 +27,25 @@ export function ChatWidget() {
         <button id="chat-close" className="chat-icon" onClick={close} aria-label="Tutup chat" title="Tutup chat"><X size={20} /></button>
       </header>
       <div className="chat-notice">Sesi chat berlaku 30 hari dan riwayat dapat dibaca admin.</div>
-      <ChatThread view={chat.view} loading={chat.loading} error={chat.error} onEarlier={() => void chat.loadEarlier()} />
-      {chat.view?.mode === "WAITING" && <p className="chat-status-note">Admin belum bergabung. Balasan mungkin tidak langsung tersedia.</p>}
-      <div className="chat-tools">
-        <button disabled={!chat.view || chat.busy || chat.view.mode !== "AI"} onClick={() => void chat.mutate("handoff")}><Headset size={16} />Hubungi Admin</button>
-        <a href="https://wa.me/6285126023250" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <div style={{ filter: !isSignedIn ? "blur(4px)" : "none", pointerEvents: !isSignedIn ? "none" : "auto", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          <ChatThread view={chat.view} loading={chat.loading} error={chat.error} onEarlier={() => void chat.loadEarlier()} />
+          {chat.view?.mode === "WAITING" && <p className="chat-status-note">Admin belum bergabung. Balasan mungkin tidak langsung tersedia.</p>}
+          <div className="chat-tools">
+            <button disabled={!chat.view || chat.busy || chat.view.mode !== "AI"} onClick={() => void chat.mutate("handoff")}><Headset size={16} />Hubungi Admin</button>
+            <a href="https://wa.me/6285126023250" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          </div>
+          <ChatComposer disabled={!chat.view || !!chat.view.pending} busy={chat.busy} onSend={text => chat.mutate("message", text)} />
+        </div>
+        
+        {!isSignedIn && (
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 10, background: "rgba(255,255,255,0.3)", borderRadius: "8px" }}>
+            <MessageCircle size={48} style={{ color: "#e84393", marginBottom: "16px", opacity: 0.8 }} />
+            <p style={{ textAlign: "center", marginBottom: "16px", fontWeight: "bold", color: "#2d3436" }}>Akses Terkunci</p>
+            <button className="neo-action neo-action--primary" onClick={() => clerk.openSignIn()}>Login untuk Chat CS</button>
+          </div>
+        )}
       </div>
-      <ChatComposer disabled={!chat.view || !!chat.view.pending} busy={chat.busy} onSend={text => chat.mutate("message", text)} />
     </section>}
   </div>;
 }
