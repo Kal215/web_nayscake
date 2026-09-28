@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ChatWidget } from "@/components/chat/chat-widget";
-import AuthButton from "@/components/AuthButton";
+import MobileNav from "@/components/MobileNav";
 
 export const metadata: Metadata = {
-  title: "Nay's Cake Website",
-  description: "Sistem Manajemen Inventori dan Penjualan Nay's Cake",
+  title: "Nay's Cake Universal",
+  description: "Aplikasi Pelanggan dan Sistem Kasir Admin Nayscake",
 };
 
 export default function RootLayout({
@@ -17,13 +17,15 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="id" className="h-full antialiased">
-        <body className="min-h-full flex flex-col relative">
-          
+        <body className="min-h-full flex flex-col relative bg-gray-50">
+          {/* Konten Utama */}
+          <main className="flex-1 w-full">
+            {children}
+          </main>
 
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[9999]">
-          <AuthButton />
-        </div>
-        {children}
+          {/* Navigasi Bawah Universal (Bottom Navigation) */}
+          <MobileNav />
+
           {process.env.CHAT_ENABLED === "true" && <ChatWidget />}
         </body>
       </html>
