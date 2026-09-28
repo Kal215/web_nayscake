@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { apiError, ApiError, requireAdmin } from "@/lib/api";
+import { apiError, ApiError, requireAdmin, requireOperator } from "@/lib/api";
 import { audit, transaction } from "@/lib/business";
 import { productInput } from "@/lib/validation";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireAdmin();
+    const operatorId = await requireOperator(request);
     const { id } = await params;
     const data = productInput.parse(await request.json());
     const product = await transaction(async tx => {
@@ -15,7 +15,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       const supplier = await tx.supplier.findUnique({ where: { id: data.supplierId } });
       if (!supplier?.isActive) throw new ApiError(400, "Pemasok tidak tersedia");
       const p = await tx.product.update({ where: { id }, data: { ...data, imageUrl: data.imageUrl || null }, include: { supplier: true } });
-      await audit(tx, user.id, "PRODUCT_UPDATED", id);
+      await audit(tx, operatorId, "PRODUCT_UPDATED", id);
       return p;
     });
     return NextResponse.json(product);
@@ -24,11 +24,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireAdmin(true);
+    const operatorId = await requireOperator(request, true);
     const { id } = await params;
     await transaction(async tx => {
       await tx.product.update({ where: { id }, data: { isActive: false } });
-      await audit(tx, user.id, "PRODUCT_ARCHIVED", id);
+      await audit(tx, operatorId, "PRODUCT_ARCHIVED", id);
     });
     return NextResponse.json({ success: true });
   } catch (error) { return apiError(error); }

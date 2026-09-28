@@ -47,7 +47,7 @@ export async function chatView(id: string, before?: number, adminId?: string) {
 }
 export async function guestSend(id: string, text: string, requestId: string, handoff = false) {
   await recoverChat(id);
-  const job = await prisma.$transaction(async tx => {
+  const result = await prisma.$transaction(async tx => {
     const c = await current(tx, id);
     const existing = await tx.chatMessage.findUnique({ where: { conversationId_requestId: { conversationId: id, requestId } } });
     if (existing) {
@@ -62,17 +62,38 @@ export async function guestSend(id: string, text: string, requestId: string, han
       ...(handoff && c.mode !== "ADMIN" ? { mode: "WAITING" } : {}),
       aiJobId: jobId, aiStartedAt: jobId ? new Date() : null,
     });
-    return jobId;
+    return { jobId, wasHandoff: handoff && c.mode !== "ADMIN" };
   });
+
+  if (result && result.wasHandoff) {
+    const hist = await prisma.chatMessage.findMany({ where: { conversationId: id }, orderBy: { sequence: "desc" }, take: 5, select: { role: true, content: true } });
+    const textHist = hist.reverse().map(m => (m.role === 'VISITOR' ? 'Pelanggan: ' : 'Bot: ') + m.content).join('\n');
+    fetch('http://localhost:3030/api/lyra/handoff', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jid: id, source: 'web', history: textHist })
+    }).catch(e => console.error("Lyra Webhook fail:", e));
+  }
+
+  const job = result ? result.jobId : null;
   if (!job) return;
   const history = await prisma.chatMessage.findMany({ where: { conversationId: id }, orderBy: { sequence: "desc" }, take: 6, select: { role: true, content: true } });
   const reply = await answerChat(history.reverse());
-  await prisma.$transaction(async tx => {
+  const finalHandoff = await prisma.$transaction(async tx => {
     const c = await current(tx, id);
     // An admin takeover or visitor handoff invalidates the in-flight AI answer.
-    if (c.mode !== "AI" || c.aiJobId !== job) return;
+    if (c.mode !== "AI" || c.aiJobId !== job) return false;
     await appendMessage(tx, c, reply.handoff ? "SYSTEM" : "AI", reply.content, null, { aiJobId: null, aiStartedAt: null, ...(reply.handoff ? { mode: "WAITING" } : {}) });
+    return reply.handoff;
   });
+
+  if (finalHandoff) {
+    const hist = await prisma.chatMessage.findMany({ where: { conversationId: id }, orderBy: { sequence: "desc" }, take: 6, select: { role: true, content: true } });
+    const textHist = hist.reverse().map(m => (m.role === 'VISITOR' ? 'Pelanggan: ' : 'Bot: ') + m.content).join('\n');
+    fetch('http://localhost:3030/api/lyra/handoff', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jid: id, source: 'web', history: textHist })
+    }).catch(e => console.error("Lyra Webhook fail:", e));
+  }
 }
 export async function adminChange(id: string, adminId: string, action: { action: "claim" | "release" | "message"; text?: string; requestId?: string }) {
   await prisma.$transaction(async tx => {

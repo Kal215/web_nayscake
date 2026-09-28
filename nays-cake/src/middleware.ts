@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -8,12 +9,14 @@ const isProtectedRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    // Tarik identitas dan fungsi pengusir secara asinkron
-    const { userId, redirectToSignIn } = await auth();
+    const { userId } = await auth();
     
-    // Jika tidak ada tiket login, usir ke halaman login!
+    // Jika tidak ada tiket login (Belum Login)
     if (!userId) {
-      return redirectToSignIn({ returnBackUrl: req.url });
+      // BUKAN diusir ke halaman Login Clerk (accounts.nayscake.me),
+      // MELAINKAN dialihkan dengan sangat halus ke halaman Publik (Beranda).
+      const homeUrl = new URL("/", req.url);
+      return NextResponse.redirect(homeUrl);
     }
   }
 });

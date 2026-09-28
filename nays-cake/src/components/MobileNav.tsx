@@ -76,7 +76,14 @@ export default function MobileNav() {
           {/* User Button di paling ujung */}
           <div className="flex flex-col items-center justify-center p-2">
             <div className="p-1">
-              {isSignedIn ? (
+              {isSignedIn && (
+          <Link href="/keranjang" className={`flex flex-col items-center justify-center p-2 relative group ${pathname === "/keranjang" ? "text-black" : "text-gray-400"}`}>
+            <ShoppingCart className={`w-5 h-5 mb-1 group-active:scale-95 transition-transform ${pathname === "/keranjang" ? "fill-black" : ""}`} />
+            <span className="text-[10px] font-medium">Keranjang</span>
+          </Link>
+        )}
+        
+        {isSignedIn ? (
                 <UserButton 
                   appearance={{ 
                     elements: { 

@@ -35,13 +35,13 @@ export async function requireAdmin(superAdmin = false) {
   return dbUser || { id: user.id, email: primaryEmail, role: "ADMIN", name: user.firstName };
 }
 
-export async function requireOperator(request: Request) {
+export async function requireOperator(request: Request, superAdmin = false) {
   if (request.headers.has("x-api-key")) {
     const denied = cekKunciBot(request);
     if (denied) throw new ApiError(denied.status, "Kunci bot tidak valid");
     return "bot";
   }
-  const admin = await requireAdmin();
+  const admin = await requireAdmin(superAdmin);
   return admin.id;
 }
 
