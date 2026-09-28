@@ -15,6 +15,7 @@ export default function AuthButton() {
     <div className="flex items-center justify-center z-[50]">
       {/* 
         SUNTIKAN FISIKA NEUMORPHISM MURNI (BULAT PENUH)
+        Menggunakan variabel warna asli dari globals.css Anda
       */}
       <style dangerouslySetInnerHTML={{__html: `
         .neo-btn-raised {
@@ -46,28 +47,14 @@ export default function AuthButton() {
            <Loader2 className="w-5 h-5 animate-spin opacity-50" />
          </div>
       ) : !isSignedIn ? (
-        // KONDISI 1: Belum Login -> Tampilkan Tombol Katalog (Utama) dan Tombol Login (Kecil)
-        <div className="neo-btn-inset flex items-center gap-2 md:gap-3 px-2 py-1.5 md:px-3 md:py-2 rounded-full">
-          <Link 
-            href="/catalog" 
-            className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold"
-          >
-            <Store className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            <span className="tracking-wide">Katalog</span>
-          </Link>
-
-          <div className="neo-btn-inset w-[2px] h-5 md:h-7 mx-0.5 rounded-full border-none opacity-50"></div>
-
-          <button
-            onClick={() => openSignIn()}
-            className="neo-btn-raised group flex items-center justify-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-bold cursor-pointer"
-            aria-label="Login / Dasbor"
-            title="Login untuk Checkout / Dashboard Admin"
-          >
-            <LogIn className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span className="hidden sm:inline text-xs md:text-sm tracking-wide">Login</span>
-          </button>
-        </div>
+        // KONDISI 1: Belum Login -> Tombol Utama Menonjol
+        <button
+          onClick={() => openSignIn({ forceRedirectUrl: '/auth-sync' })}
+          className="neo-btn-raised group flex items-center justify-center gap-2.5 px-4 py-2 md:px-5 md:py-2 rounded-full font-bold cursor-pointer"
+        >
+          <LogIn className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:-translate-x-1" />
+          <span className="text-sm md:text-base tracking-wide">Login</span>
+        </button>
       ) : (
         // KONDISI 2: Sudah Login -> Wadah Utama Tenggelam ke Dalam
         <div className="neo-btn-inset flex items-center gap-2 md:gap-3 px-2 py-1.5 md:px-3 md:py-2 rounded-full">
@@ -98,7 +85,7 @@ export default function AuthButton() {
               className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold"
             >
               <Store className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              <span className="hidden sm:inline tracking-wide">Katalog</span>
+              <span className="hidden sm:inline tracking-wide">Lihat Katalog</span>
               <span className="inline sm:hidden">Katalog</span>
             </Link>
           )}
