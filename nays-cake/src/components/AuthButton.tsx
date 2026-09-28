@@ -2,7 +2,7 @@
 
 import { UserButton, useAuth, useClerk, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { LogIn, LayoutDashboard, Store, Loader2 } from "lucide-react";
+import { LogIn, LayoutDashboard, Store, Loader2, Calculator } from "lucide-react";
 
 export default function AuthButton() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -13,10 +13,6 @@ export default function AuthButton() {
 
   return (
     <div className="flex items-center justify-center z-[50]">
-      {/* 
-        SUNTIKAN FISIKA NEUMORPHISM MURNI (BULAT PENUH)
-        Menggunakan variabel warna asli dari globals.css Anda
-      */}
       <style dangerouslySetInnerHTML={{__html: `
         .neo-btn-raised {
           background: var(--neo-base);
@@ -25,20 +21,11 @@ export default function AuthButton() {
           border: 1px solid #d1dbd7;
           transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .neo-btn-raised:hover { 
-          background: #f5f8f7; 
-        }
+        .neo-btn-raised:hover { background: #f5f8f7; }
         .neo-btn-raised:active {
           box-shadow: var(--neo-inset);
           background: #e5eeea;
-          transform: scale(0.96); /* Animasi fisik ditekan ke dalam */
-        }
-        
-        .neo-btn-inset {
-          background: var(--neo-base);
-          box-shadow: var(--neo-inset);
-          border: 1px solid #d1dbd7;
-          transition: all 300ms ease;
+          transform: scale(0.96);
         }
       `}} />
 
@@ -47,7 +34,6 @@ export default function AuthButton() {
            <Loader2 className="w-5 h-5 animate-spin opacity-50" />
          </div>
       ) : !isSignedIn ? (
-        // KONDISI 1: Belum Login -> Tombol Utama Menonjol
         <button
           onClick={() => openSignIn({ forceRedirectUrl: '/auth-sync' })}
           className="neo-btn-raised group flex items-center justify-center gap-2.5 px-4 py-2 md:px-5 md:py-2 rounded-full font-bold cursor-pointer"
@@ -56,55 +42,38 @@ export default function AuthButton() {
           <span className="text-sm md:text-base tracking-wide">Login</span>
         </button>
       ) : (
-        // KONDISI 2: Sudah Login -> Wadah Utama Tenggelam ke Dalam
-        <div className="neo-btn-inset flex items-center gap-2 md:gap-3 px-2 py-1.5 md:px-3 md:py-2 rounded-full">
-          
-          {isAdmin ? (
-            // Tombol Dasbor & Katalog untuk Admin
-            <>
-              <Link 
-                href="/dashboard" 
-                className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-bold"
-              >
-                <LayoutDashboard className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                <span className="hidden sm:inline tracking-wide">Dashboard</span>
-              </Link>
-              <Link 
-                href="/catalog" 
-                className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold"
-              >
-                <Store className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                <span className="hidden sm:inline tracking-wide">Katalog</span>
-                <span className="inline sm:hidden">Katalog</span>
-              </Link>
-            </>
-          ) : (
-            // Tombol Pelanggan -> Menonjol dari dalam cekungan
-            <Link 
-              href="/catalog" 
-              className="neo-btn-raised group flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full text-xs md:text-sm font-semibold"
-            >
-              <Store className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              <span className="hidden sm:inline tracking-wide">Lihat Katalog</span>
-              <span className="inline sm:hidden">Katalog</span>
-            </Link>
-          )}
-
-          {/* Garis Pemisah -> Ikut Tenggelam */}
-          <div className="neo-btn-inset w-[2px] h-5 md:h-7 mx-1 rounded-full border-none opacity-50"></div>
-
-          {/* Tombol Logout (Avatar) -> Menonjol, bisa ditekan ke dalam */}
-          <div className="neo-btn-raised relative rounded-full p-1 mr-1 flex items-center justify-center cursor-pointer">
-             <UserButton 
-               appearance={{ 
-                 elements: { 
-                   avatarBox: "w-7 h-7 md:w-9 md:h-9 border border-[#d1dbd7] rounded-full",
-                   userButtonPopoverCard: "shadow-[4px_4px_9px_var(--neo-shadow),-4px_-4px_9px_var(--neo-light)] rounded-3xl border border-[#d1dbd7] font-sans",
-                   userButtonTrigger: "focus:shadow-none focus:outline-none"
-                 } 
-               }} 
-             />
-          </div>
+        <div className="neo-btn-raised relative rounded-full p-1 flex items-center justify-center cursor-pointer">
+           <UserButton 
+             appearance={{ 
+               elements: { 
+                 avatarBox: "w-9 h-9 md:w-11 md:h-11 border-2 border-[#d1dbd7] rounded-full",
+                 userButtonPopoverCard: "shadow-[4px_4px_9px_var(--neo-shadow),-4px_-4px_9px_var(--neo-light)] rounded-3xl border border-[#d1dbd7] font-sans",
+                 userButtonTrigger: "focus:shadow-none focus:outline-none"
+               } 
+             }} 
+           >
+             <UserButton.MenuItems>
+               {isAdmin && (
+                 <>
+                   <UserButton.Link
+                     label="Kasir POS"
+                     labelIcon={<Calculator className="w-4 h-4" />}
+                     href="/dashboard/kasir"
+                   />
+                   <UserButton.Link
+                     label="Dashboard Admin"
+                     labelIcon={<LayoutDashboard className="w-4 h-4" />}
+                     href="/dashboard"
+                   />
+                 </>
+               )}
+               <UserButton.Link
+                 label="Katalog"
+                 labelIcon={<Store className="w-4 h-4" />}
+                 href="/catalog"
+               />
+             </UserButton.MenuItems>
+           </UserButton>
         </div>
       )}
     </div>
