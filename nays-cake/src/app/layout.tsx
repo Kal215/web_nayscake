@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ChatWidget } from "@/components/chat/chat-widget";
 import MobileNav from "@/components/MobileNav";
+import FloatingCart from "@/components/FloatingCart";
 
 export const metadata: Metadata = {
   title: "Nay's Cake Universal",
@@ -25,6 +26,7 @@ export default function RootLayout({
 
           {/* Navigasi Bawah Universal (Bottom Navigation) */}
           <MobileNav />
+        <FloatingCart />
 
           {process.env.CHAT_ENABLED === "true" && <ChatWidget />}
         </body>
