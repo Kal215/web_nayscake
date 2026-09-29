@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/dashboard/sidebar";
 
 export default function KasirNayscake() {
   const router = useRouter();
@@ -99,9 +100,10 @@ export default function KasirNayscake() {
     return acc;
   }, {});
 
-  if (loading) return <div className="p-8 text-center text-sm font-medium text-gray-500">Memuat Sistem Kasir...</div>;
+  if (loading) return <Sidebar><div className="p-8 text-center text-sm font-medium text-gray-500">Memuat Sistem Kasir...</div></Sidebar>;
 
   return (
+    <Sidebar>
     <div className="min-h-screen bg-[#fafafa] font-sans pb-32">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
@@ -197,5 +199,6 @@ export default function KasirNayscake() {
         </div>
       )}
     </div>
+    </Sidebar>
   );
 }

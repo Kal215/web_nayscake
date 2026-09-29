@@ -14,7 +14,8 @@ import {
   Menu,
   Cake,
   MessageCircle,
-  ClipboardList
+  ClipboardList,
+  Calculator
 } from "lucide-react";
 import { useState } from "react";
 import { useUnreadChats } from "@/hooks/useUnreadChats";
@@ -22,6 +23,8 @@ import { AlarmPesanan } from "./AlarmPesanan";
 import { usePesananBaru } from "@/hooks/usePesananBaru";
 
 const navigation = [
+  { name: "Kasir", href: "/dashboard/kasir", icon: Calculator },
+
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Produk", href: "/dashboard/products", icon: Package },
   { name: "Supplier", href: "/dashboard/supplier", icon: Users },

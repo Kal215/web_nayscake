@@ -45,9 +45,7 @@ export default function MobileNav() {
 
   const navItems = [
     { name: "Beranda", href: "/", icon: Home },
-    ...(isAdmin 
-      ? [{ name: "Kasir", href: "/dashboard/kasir", icon: PackageSearch }]
-      : [{ name: "Katalog", href: "/catalog", icon: PackageSearch }]),
+    { name: "Katalog", href: "/catalog", icon: PackageSearch },
     { 
       name: "Keranjang", 
       href: "/keranjang", 
