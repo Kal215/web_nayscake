@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PackageSearch, ShoppingBag, User } from "lucide-react";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useAuth, UserButton } from "@clerk/nextjs";
 
 export default function DesktopNav() {
   const pathname = usePathname();
+  const { isSignedIn } = useAuth();
 
   const navItems = [
     { name: "Beranda", href: "/", icon: Home },
@@ -45,15 +46,14 @@ export default function DesktopNav() {
 
             {/* Profile / Auth */}
             <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
-              <SignedIn>
+              {isSignedIn ? (
                 <div className="flex items-center gap-3">
                   <Link href="/dashboard" className="text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors">
                     Dashboard
                   </Link>
                   <UserButton />
                 </div>
-              </SignedIn>
-              <SignedOut>
+              ) : (
                 <Link
                   href="/sign-in"
                   className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors"
@@ -61,7 +61,7 @@ export default function DesktopNav() {
                   <User className="w-4 h-4" />
                   Login
                 </Link>
-              </SignedOut>
+              )}
             </div>
           </div>
         </div>
