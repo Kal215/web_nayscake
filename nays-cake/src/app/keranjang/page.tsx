@@ -47,8 +47,9 @@ export default function KeranjangPage() {
     
     // Perbaikan Webview Android APK
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Menggunakan Universal Link mutakhir (wa.me) agar lolos blokir Webview HP & Safari
     const waUrl = isMobile 
-      ? `whatsapp://send?phone=${nomorBot}&text=${teks}`
+      ? `https://wa.me/${nomorBot}?text=${teks}`
       : `https://api.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
       
     if (isMobile) {
