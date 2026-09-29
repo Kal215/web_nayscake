@@ -51,7 +51,7 @@ export default function KeranjangPage() {
       ? `whatsapp://send?phone=${nomorBot}&text=${teks}`
       : `https://web.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
       
-    window.open(waUrl, "_blank");
+    window.location.href = waUrl;
   };
 
   return (
