@@ -3,16 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PackageSearch, ShoppingBag, User } from "lucide-react";
-import { useAuth, UserButton, useClerk } from "@clerk/nextjs";
+import { useAuth, UserButton, useClerk, useUser } from "@clerk/nextjs";
 
 export default function DesktopNav() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
   const { openSignIn } = useClerk();
+  const { user } = useUser();
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === "riskalfadhilla215@gmail.com";
 
   const navItems = [
     { name: "Beranda", href: "/", icon: Home },
-    { name: "Katalog", href: "/catalog", icon: PackageSearch },
+    ...(isAdmin 
+      ? [{ name: "Kasir", href: "/dashboard/kasir", icon: PackageSearch }]
+      : [{ name: "Katalog", href: "/catalog", icon: PackageSearch }]),
     { name: "Keranjang", href: "/keranjang", icon: ShoppingBag },
   ];
 

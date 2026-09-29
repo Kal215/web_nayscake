@@ -30,7 +30,7 @@ export default async function AuthSyncPage() {
   });
 
   if (dbUser.role === "ADMIN") {
-    redirect("/dashboard");
+    redirect("/dashboard/kasir");
   } else {
     redirect("/catalog");
   }

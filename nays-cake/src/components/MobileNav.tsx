@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, PackageSearch, User, ShoppingCart } from "lucide-react";
-import { useAuth, useClerk, SignIn } from "@clerk/nextjs";
+import { useAuth, useClerk, SignIn, useUser } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useCartStore } from "@/store/cartStore";
@@ -13,6 +13,8 @@ export default function MobileNav() {
   const pathname = usePathname();
   const { isLoaded, userId } = useAuth();
   const clerk = useClerk();
+  const { user } = useUser();
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === "riskalfadhilla215@gmail.com";
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -43,7 +45,9 @@ export default function MobileNav() {
 
   const navItems = [
     { name: "Beranda", href: "/", icon: Home },
-    { name: "Katalog", href: "/catalog", icon: PackageSearch },
+    ...(isAdmin 
+      ? [{ name: "Kasir", href: "/dashboard/kasir", icon: PackageSearch }]
+      : [{ name: "Katalog", href: "/catalog", icon: PackageSearch }]),
     { 
       name: "Keranjang", 
       href: "/keranjang", 
