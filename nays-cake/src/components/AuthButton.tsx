@@ -9,7 +9,7 @@ export default function AuthButton() {
   const { openSignIn } = useClerk();
   const { user } = useUser();
 
-  const isAdmin = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(user?.primaryEmailAddress?.emailAddress || "");
+  const isAdmin = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com", "atinayscake@gmail.com"].includes(user?.primaryEmailAddress?.emailAddress || "");
 
   return (
     <div className="flex items-center justify-center z-[50]">

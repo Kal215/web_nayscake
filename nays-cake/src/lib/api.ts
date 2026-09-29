@@ -21,13 +21,13 @@ export async function requireAdmin(superAdmin = false) {
   }
 
   // Pengecekan Mutlak
-  const isAdmin = dbUser?.role === "ADMIN" || dbUser?.role === "SUPER_ADMIN" || ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(primaryEmail);
+  const isAdmin = dbUser?.role === "ADMIN" || dbUser?.role === "SUPER_ADMIN" || ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com", "atinayscake@gmail.com"].includes(primaryEmail);
   
   if (!isAdmin) {
     throw new ApiError(403, "Akses tidak diizinkan");
   }
 
-  if (superAdmin && dbUser?.role !== "SUPER_ADMIN" && !["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(primaryEmail)) {
+  if (superAdmin && dbUser?.role !== "SUPER_ADMIN" && !["riskalfadhilla215@gmail.com", "nayscake16@gmail.com", "atinayscake@gmail.com"].includes(primaryEmail)) {
     throw new ApiError(403, "Akses SUPER ADMIN tidak diizinkan");
   }
 

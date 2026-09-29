@@ -9,7 +9,7 @@ export default async function ProfilPage() {
   }
 
   const primaryEmail = user.emailAddresses[0]?.emailAddress;
-  const isAdmin = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(primaryEmail);
+  const isAdmin = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com", "atinayscake@gmail.com"].includes(primaryEmail);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 pt-12 pb-[100px]">
