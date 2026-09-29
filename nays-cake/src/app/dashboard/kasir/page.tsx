@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { Search } from "lucide-react";
 
 export default function KasirNayscake() {
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // State for form
   const [inputs, setInputs] = useState<Record<string, { masuk: string, sisa: string }>>({});
@@ -93,7 +95,9 @@ export default function KasirNayscake() {
   }
 
   // Group by supplier
-  const groupedProducts = products.reduce((acc: any, curr: any) => {
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.supplier && p.supplier.toLowerCase().includes(searchQuery.toLowerCase())));
+
+  const groupedProducts = filteredProducts.reduce((acc: any, curr: any) => {
     const s = curr.supplier || 'LAIN-LAIN';
     if (!acc[s]) acc[s] = [];
     acc[s].push(curr);
@@ -109,6 +113,20 @@ export default function KasirNayscake() {
       <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Pencatatan Nayscake</h1>
         <p className="text-xs text-gray-500 mt-1">Pagi: Masukkan Stok Bawaan &bull; Sore: Masukkan Sisa</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="px-4 py-3 bg-white border-b border-gray-200">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cari nama kue atau supplier..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all"
+          />
+        </div>
       </div>
 
       <div className="p-4 space-y-6">
