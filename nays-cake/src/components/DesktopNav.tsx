@@ -50,7 +50,7 @@ export default function DesktopNav() {
                   <Link href="/dashboard" className="text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors">
                     Dashboard
                   </Link>
-                  <UserButton afterSignOutUrl="/" />
+                  <UserButton />
                 </div>
               </SignedIn>
               <SignedOut>
