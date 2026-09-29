@@ -49,9 +49,9 @@ export default function KeranjangPage() {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const waUrl = isMobile 
       ? `whatsapp://send?phone=${nomorBot}&text=${teks}`
-      : `https://web.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
+      : `https://api.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
       
-    window.location.assign(waUrl);
+    window.open(waUrl, "_blank");
   };
 
   return (

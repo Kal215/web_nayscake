@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PackageSearch, ShoppingBag, User } from "lucide-react";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth, UserButton, useClerk } from "@clerk/nextjs";
 
 export default function DesktopNav() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
 
   const navItems = [
     { name: "Beranda", href: "/", icon: Home },
@@ -54,13 +55,13 @@ export default function DesktopNav() {
                   <UserButton />
                 </div>
               ) : (
-                <Link
-                  href="/sign-in"
-                  className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors"
+                <button
+                  onClick={() => openSignIn({ forceRedirectUrl: '/auth-sync' })}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors cursor-pointer"
                 >
                   <User className="w-4 h-4" />
                   Login
-                </Link>
+                </button>
               )}
             </div>
           </div>
