@@ -2,7 +2,7 @@
 @source "../";
 
 /* Chat surfaces are opt-in and never alter operational table styling. */
-.chat-widget { position: fixed; right: 24px; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 60; }
+.chat-widget { position: fixed; right: 24px; bottom: max(96px, env(safe-area-inset-bottom)); z-index: 60; }
 .chat-launch { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 20px; font-weight: 600; }
 .chat-panel { display: flex; flex-direction: column; width: min(400px, calc(100vw - 32px)); height: min(650px, calc(100dvh - 48px)); background: #f8faf9; border: 1px solid #c5d4ce; border-radius: 8px; box-shadow: 0 12px 44px #14392b35; overflow: hidden; }
 .chat-header { display: flex; align-items: center; gap: 10px; padding: 16px; background: #eef2f1; border-bottom: 1px solid #d2ddd8; flex-shrink: 0; }
@@ -54,7 +54,7 @@
 .chat-takeover { display: flex; align-items: center; gap: 6px; padding: 8px 10px; font-size: 12px; flex-shrink: 0; }
 .chat-back { display: none; }
 @media (max-width: 767px) {
-  .chat-widget { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+  .chat-widget { right: 12px; bottom: max(90px, env(safe-area-inset-bottom)); }
   .chat-panel { width: calc(100vw - 24px); height: min(640px, calc(100dvh - 24px)); }
   .chat-inbox { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 220px); min-height: 480px; }
   .chat-inbox-list { border-right: 0; }

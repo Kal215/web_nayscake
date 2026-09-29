@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, X, Plus, Minus, MessageCircle } from "lucide-react";
+import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useCartStore } from "@/store/cartStore";
 
@@ -55,8 +56,22 @@ export default function FloatingCart() {
 
   return (
     <>
-      <motion.button onClick={() => setIsOpen(true)} className="fixed bottom-24 lg:bottom-6 right-6 bg-amber-600 text-white p-4 rounded-full shadow-2xl z-[90] flex items-center justify-center hover:bg-amber-700 transition-colors" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-        <div className="relative">
+      {/* Di HP: Klik tombol langsung lompat ke halaman /keranjang */}
+      <div className="lg:hidden">
+        <Link href="/keranjang">
+          <motion.button className="fixed bottom-24 right-6 bg-amber-600 text-white p-4 rounded-full shadow-2xl z-[90] flex items-center justify-center hover:bg-amber-700 transition-colors" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <div className="relative">
+              <ShoppingCart className="w-6 h-6" />
+              <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalItems}</span>
+            </div>
+          </motion.button>
+        </Link>
+      </div>
+
+      {/* Di Desktop/Laptop: Buka laci sisi kanan */}
+      <div className="hidden lg:block">
+        <motion.button onClick={() => setIsOpen(true)} className="fixed bottom-6 right-6 bg-amber-600 text-white p-4 rounded-full shadow-2xl z-[90] flex items-center justify-center hover:bg-amber-700 transition-colors" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+          <div className="relative">
           <ShoppingCart className="w-6 h-6" />
           <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalItems}</span>
         </div>
@@ -98,6 +113,7 @@ export default function FloatingCart() {
           </>
         )}
       </AnimatePresence>
+      </div>
     </>
   );
 }
