@@ -56,7 +56,7 @@ export default function FloatingCart() {
       ? `whatsapp://send?phone=${nomorBot}&text=${teks}`
       : `https://web.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
       
-    window.location.href = waUrl;
+    window.location.assign(waUrl);
   };
 
   return (

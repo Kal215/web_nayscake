@@ -135,14 +135,7 @@ export default function CatalogPage() {
   const heroScale = useTransform(smoothY, [0, 0.5], [1, 1.1]);
 
 
-  useEffect(() => {
-    setMounted(true);
-    fetchProducts();
-  }, []);
-
-  useEffect(() => { filterAndSortProducts(); }, [search, selectedCategory, selectedSupplier, priceRange, allProducts]);
-
-  const fetchProducts = async () => {
+const fetchProducts = async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/products");
@@ -157,7 +150,7 @@ export default function CatalogPage() {
     }
   };
 
-  const filterAndSortProducts = () => {
+const filterAndSortProducts = () => {
     let filtered = [...allProducts];
     if (search) filtered = filtered.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.supplier.toLowerCase().includes(search.toLowerCase()));
     if (selectedCategory) filtered = filtered.filter((p) => p.category === selectedCategory);
@@ -168,7 +161,14 @@ export default function CatalogPage() {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  useEffect(() => {
+    setMounted(true);
+    fetchProducts();
+  }, []);
+
+  useEffect(() => { filterAndSortProducts(); }, [search, selectedCategory, selectedSupplier, priceRange, allProducts]);
+
+      const totalPages = Math.ceil(products.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentProducts = products.slice(startIndex, startIndex + itemsPerPage);
 
