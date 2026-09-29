@@ -49,7 +49,14 @@ export default function FloatingCart() {
     const pesan = cartItems.map((i) => `▪ ${i.quantity}x ${i.name}`).join('%0A');
     const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;
     const nomorBot = "6285703586056";
-    window.open(`https://wa.me/${nomorBot}?text=${teks}`, "_blank");
+    
+    // Perbaikan untuk Android WebView (APK)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const waUrl = isMobile 
+      ? `whatsapp://send?phone=${nomorBot}&text=${teks}`
+      : `https://web.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
+      
+    window.open(waUrl, "_blank");
   };
 
   if (cartItems.length === 0) return null;
@@ -68,14 +75,17 @@ export default function FloatingCart() {
         </Link>
       </div>
 
-      {/* Di Desktop/Laptop: Buka laci sisi kanan */}
+      {/* Di Desktop/Laptop: Tampilkan Tombol Floating yang memanggil Drawer Laci */}
       <div className="hidden lg:block">
         <motion.button onClick={() => setIsOpen(true)} className="fixed bottom-6 right-6 bg-amber-600 text-white p-4 rounded-full shadow-2xl z-[90] flex items-center justify-center hover:bg-amber-700 transition-colors" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
           <div className="relative">
-          <ShoppingCart className="w-6 h-6" />
-          <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalItems}</span>
-        </div>
-      </motion.button>
+            <ShoppingCart className="w-6 h-6" />
+            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalItems}</span>
+          </div>
+        </motion.button>
+      </div>
+      
+      {/* Drawer Laci Keranjang (Tampil secara Universal Jika isOpen true) */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -113,7 +123,6 @@ export default function FloatingCart() {
           </>
         )}
       </AnimatePresence>
-      </div>
     </>
   );
 }

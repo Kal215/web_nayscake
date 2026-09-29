@@ -44,7 +44,14 @@ export default function KeranjangPage() {
     const pesan = cartItems.map((i) => `▪ ${i.quantity}x ${i.name}`).join('%0A');
     const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;
     const nomorBot = "6285703586056";
-    window.open(`https://wa.me/${nomorBot}?text=${teks}`, "_blank");
+    
+    // Perbaikan Webview Android APK
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const waUrl = isMobile 
+      ? `whatsapp://send?phone=${nomorBot}&text=${teks}`
+      : `https://web.whatsapp.com/send?phone=${nomorBot}&text=${teks}`;
+      
+    window.open(waUrl, "_blank");
   };
 
   return (
