@@ -401,20 +401,12 @@ const filterAndSortProducts = () => {
       {/* Product Modal */}
       <AnimatePresence>
         {selectedProduct && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedProduct(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-white rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[90vh]"
-            >
+          <motion.div key="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140]" />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {selectedProduct && (
+          <motion.div key="modal-content" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-white rounded-3xl shadow-2xl z-[150] overflow-hidden flex flex-col max-h-[90vh]">
               <button
                 onClick={() => setSelectedProduct(null)}
                 className="absolute top-4 right-4 z-10 p-2 bg-white/80 hover:bg-white text-gray-600 rounded-full backdrop-blur-md transition-colors shadow-sm"
@@ -480,7 +472,6 @@ const filterAndSortProducts = () => {
                 </button>
                 </div>
               </motion.div>
-          </>
         )}
       </AnimatePresence>
       <FloatingCart />

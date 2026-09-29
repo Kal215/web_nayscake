@@ -86,9 +86,12 @@ export default function FloatingCart() {
       {/* Drawer Laci Keranjang (Tampil secara Universal Jika isOpen true) */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} exit={{ opacity: 0 }} onClick={() => setIsOpen(false)} className="fixed inset-0 bg-black z-[120]" />
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", bounce: 0, duration: 0.4 }} className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-[130] flex flex-col">
+          <motion.div key="overlay" initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} exit={{ opacity: 0 }} onClick={() => setIsOpen(false)} className="fixed inset-0 bg-black z-[120]" />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div key="drawer" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", bounce: 0, duration: 0.4 }} className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-[130] flex flex-col">
               <div className="p-5 border-b flex items-center justify-between bg-amber-50">
                 <h2 className="text-xl font-bold text-amber-900 flex items-center gap-2"><ShoppingCart className="w-5 h-5"/> Keranjang Belanja</h2>
                 <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-amber-100 rounded-full text-amber-700"><X className="w-5 h-5" /></button>
@@ -118,7 +121,6 @@ export default function FloatingCart() {
                 </button>
               </div>
             </motion.div>
-          </>
         )}
       </AnimatePresence>
     </>
