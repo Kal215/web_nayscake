@@ -474,7 +474,7 @@ const filterAndSortProducts = () => {
               </motion.div>
         )}
       </AnimatePresence>
-      <FloatingCart />
+      
     </div>
   );
 }
