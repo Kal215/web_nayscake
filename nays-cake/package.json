@@ -40,7 +40,8 @@
     "svix": "^2.5.0",
     "tailwind-merge": "^3.6.0",
     "ws": "^8.21.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.4.1",
