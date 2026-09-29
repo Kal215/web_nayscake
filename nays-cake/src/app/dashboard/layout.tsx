@@ -28,7 +28,7 @@ export default async function DashboardLayout({
   }
 
   // Cek pangkat Admin
-  const isAdmin = dbUser?.role === "ADMIN" || primaryEmail === "riskalfadhilla215@gmail.com";
+  const isAdmin = dbUser?.role === "ADMIN" || ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(primaryEmail);
 
   if (!isAdmin) {
     redirect("/");

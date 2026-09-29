@@ -11,7 +11,7 @@ export default async function AuthSyncPage() {
   const primaryEmail = user.emailAddresses[0]?.emailAddress;
   const name = user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : primaryEmail;
   // Fallback Role
-  const determinedRole = primaryEmail === "riskalfadhilla215@gmail.com" ? "ADMIN" : "CUSTOMER";
+  const determinedRole = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(primaryEmail) ? "ADMIN" : "CUSTOMER";
 
   // Upsert langsung tanpa try-catch, karena kolom sudah ada!
   const dbUser = await prisma.user.upsert({

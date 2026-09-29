@@ -10,7 +10,7 @@ export default function DesktopNav() {
   const { isSignedIn } = useAuth();
   const { openSignIn } = useClerk();
   const { user } = useUser();
-  const isAdmin = user?.primaryEmailAddress?.emailAddress === "riskalfadhilla215@gmail.com";
+  const isAdmin = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(user?.primaryEmailAddress?.emailAddress || "");
 
   const navItems = [
     { name: "Beranda", href: "/", icon: Home },

@@ -14,7 +14,7 @@ export default function MobileNav() {
   const { isLoaded, userId } = useAuth();
   const clerk = useClerk();
   const { user } = useUser();
-  const isAdmin = user?.primaryEmailAddress?.emailAddress === "riskalfadhilla215@gmail.com";
+  const isAdmin = ["riskalfadhilla215@gmail.com", "nayscake16@gmail.com"].includes(user?.primaryEmailAddress?.emailAddress || "");
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
