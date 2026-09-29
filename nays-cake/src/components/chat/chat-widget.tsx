@@ -9,7 +9,7 @@ import { ChatComposer, ChatThread } from "./chat-thread";
 
 export function ChatWidget() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const clerk = useClerk();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -38,11 +38,15 @@ export function ChatWidget() {
           <ChatComposer disabled={!chat.view || !!chat.view.pending} busy={chat.busy} onSend={text => chat.mutate("message", text)} />
         </div>
         
-        {!isSignedIn && (
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 10, background: "rgba(255,255,255,0.3)", borderRadius: "8px" }}>
+        {!isLoaded ? (
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 10, background: "rgba(255,255,255,0.8)", borderRadius: "8px" }}>
+            <p style={{ fontWeight: "bold", color: "#2d3436" }}>Memuat...</p>
+          </div>
+        ) : !isSignedIn && (
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 10, background: "rgba(255,255,255,0.3)", borderRadius: "8px", backdropFilter: "blur(2px)" }}>
             <MessageCircle size={48} style={{ color: "#e84393", marginBottom: "16px", opacity: 0.8 }} />
             <p style={{ textAlign: "center", marginBottom: "16px", fontWeight: "bold", color: "#2d3436" }}>Akses Terkunci</p>
-            <button className="neo-action neo-action--primary" onClick={() => clerk.openSignIn()}>Login untuk Chat CS</button>
+            <button className="neo-action neo-action--primary bg-amber-500 text-white px-4 py-2 rounded" onClick={() => clerk.openSignIn()}>Login untuk Chat CS</button>
           </div>
         )}
       </div>
