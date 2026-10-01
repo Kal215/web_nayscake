@@ -22,7 +22,7 @@ model User {
   password  String?
   role      UserRole @default(CUSTOMER)
   imageUrl  String?
-  whatsapp  String?
+  nomor_hp  String?
   address   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

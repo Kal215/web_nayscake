@@ -11,14 +11,14 @@ export async function saveProfile(formData: FormData) {
   const primaryEmail = user.emailAddresses[0]?.emailAddress;
   if (!primaryEmail) throw new Error("No email found");
 
-  const whatsapp = formData.get("whatsapp") as string;
+  const nomor_hp = formData.get("nomor_hp") as string;
   const address = formData.get("address") as string;
 
   // Upsert user to ensure they exist in db
   await prisma.user.upsert({
     where: { email: primaryEmail },
     update: {
-      whatsapp,
+      nomor_hp,
       address,
       name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Pengguna",
       clerkId: user.id,
@@ -29,7 +29,7 @@ export async function saveProfile(formData: FormData) {
       clerkId: user.id,
       name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Pengguna",
       imageUrl: user.imageUrl,
-      whatsapp,
+      nomor_hp,
       address,
     }
   });

@@ -71,7 +71,7 @@ export default async function ProfilPage() {
           </div>
           
           <ProfileForm 
-            initialWhatsapp={dbUser?.whatsapp || ""} 
+            initialNomorHp={dbUser?.nomor_hp || ""} 
             initialAddress={dbUser?.address || ""} 
           />
         </div>

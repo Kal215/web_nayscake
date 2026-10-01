@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { saveProfile } from "./actions";
 
-export default function ProfileForm({ initialWhatsapp, initialAddress }: { initialWhatsapp: string, initialAddress: string }) {
+export default function ProfileForm({ initialNomorHp, initialAddress }: { initialNomorHp: string, initialAddress: string }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -30,8 +30,8 @@ export default function ProfileForm({ initialWhatsapp, initialAddress }: { initi
         <label className="text-xs font-medium text-gray-700 mb-1 block">Nomor WhatsApp</label>
         <input 
           type="text" 
-          name="whatsapp"
-          defaultValue={initialWhatsapp}
+          name="nomor_hp"
+          defaultValue={initialNomorHp}
           placeholder="Contoh: 081234567890" 
           className="w-full bg-white border border-gray-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded-xl p-3 text-sm text-gray-700 shadow-sm transition-all" 
         />
