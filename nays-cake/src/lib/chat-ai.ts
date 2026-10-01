@@ -37,7 +37,7 @@ function productLine(product: Product, products: Product[]) {
 function catalogReply(products: Product[]) {
   if (!products.length) return { content: "Belum ada menu aktif yang bisa saya tampilkan. " + HANDOFF_REPLY.content, handoff: true };
   const sample = [...products].sort((a, b) => a.name.localeCompare(b.name, "id") || a.id.localeCompare(b.id)).slice(0, 5);
-  return { content: "Bisa, Kak. Ada " + products.length + " pilihan produk di katalog. " + (products.length > sample.length ? "Berikut beberapa di antaranya:" : "Berikut daftarnya:") + "\n\n" + sample.map(p => "- " + productLine(p, products)).join("\n") + "\n\nLihat katalog lengkap: " + CATALOG_URL + "\nKetersediaan saat pengambilan perlu dikonfirmasi admin.\n\nKakak tertarik kue yang mana?", handoff: false };
+  return { content: "Bisa, Kak. Ada " + products.length + " pilihan produk di katalog. " + (products.length > sample.length ? "Berikut beberapa di antaranya:" : "Berikut daftarnya:") + "\n\n" + sample.map(p => "- " + productLine(p, products)).join("\n") + "\n\nAda yang menarik, Kak? Kalau bingung, Kakak bisa tanya rekomendasi ke saya.", handoff: false };
 }
 export function renderSelection(raw: unknown, products: Product[]) {
   const choice = selection.parse(raw);
@@ -54,7 +54,7 @@ export function renderSelection(raw: unknown, products: Product[]) {
       if (!product || !Number.isFinite(product.sellingPrice) || product.sellingPrice < 0) throw new Error("Unknown product");
       return productLine(product, products);
     }).join("\n\n");
-    return { content: content + (choice.kind === "products" ? "\n\nKetersediaan untuk waktu pengambilan perlu dikonfirmasi admin. Chat ini belum membuat pesanan." : ""), handoff: false };
+    return { content: content, handoff: false };
   }
   if (choice.ids.length) throw new Error("Unexpected references");
   if (choice.kind === "catalog") return catalogReply(products);
