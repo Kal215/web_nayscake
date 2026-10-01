@@ -4,6 +4,10 @@ import { rateLimit } from "@/lib/chat-security";
 import { chatProviders, providerSelection } from "@/lib/chat-providers";
 
 export const CHAT_FACTS = [
+  { id: "ketahanan", text: "Bolu Brownies tahan 2 hari di suhu ruang (3-4 hari di kulkas). Risol Mayo tahan 1 hari di suhu ruang (2-3 hari di kulkas)." },
+  { id: "partai_besar", text: "Toko tidak memberikan diskon/potongan harga untuk pesanan jumlah besar, tapi kami akan memberikan BONUS tambahan kue/gorengan di dalamnya." },
+  { id: "custom_tumpeng", text: "Toko TIDAK menerima pesanan nasi tumpeng atau kue ultah custom foto. Jika ingin custom, hanya untuk kue basah/gorengan dan WAJIB konfirmasi ke admin." },
+  { id: "pickup_pagi", text: "Pesanan TIDAK BISA diambil/dilayani di bawah jam operasional toko. Toko Cililin baru buka jam 06.00 WIB, Rancapanggung jam 07.00 WIB." },
   { id: "jam_utama", text: "Toko utama buka setiap hari pukul 06.00-18.00 WIB." },
   { id: "jam_cabang", text: "Cabang Rancapanggung buka setiap hari pukul 07.00-12.00 WIB." },
   { id: "maps_cabang", text: "Google Maps cabang Rancapanggung: https://maps.app.goo.gl/fzvJrdbCGMVV3yFq7" },
@@ -38,7 +42,7 @@ function catalogReply(products: Product[]) {
 }
 export async function answerChat(history: { role: string; content: string }[]) {
   const latest = history.at(-1)?.content || "";
-  if (/alerg|halal|komposisi|bahan|tahan|basi|awet|simpan|pengawet|gluten|kesehatan|\badmin\b|komplain|refund/i.test(latest)) return HANDOFF_REPLY;
+  if (/alerg|halal|komposisi|bahan|pengawet|gluten|kesehatan|\badmin\b|komplain|refund/i.test(latest)) return HANDOFF_REPLY;
   const intent = simpleIntent(latest);
   if (intent === "inquiry") return { content: INQUIRY_REPLY, handoff: false };
   if (intent === "greeting") return { content: history.some(m => m.role === "AI") ? "Halo lagi, Kak. Ada yang ingin ditanyakan?" : "Halo Kak, selamat datang di Nay's Cake. Ada yang ingin ditanyakan tentang menu atau toko?", handoff: false };
