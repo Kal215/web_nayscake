@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { saveProfile } from "./actions";
 
-export default function ProfileForm({ initialNomorHp, initialAddress }: { initialNomorHp: string, initialAddress: string }) {
+export default function ProfileForm({ initialNomorHp, initialAddress, initialMetodeAmbil }: { initialNomorHp: string, initialAddress: string, initialMetodeAmbil: string }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -36,16 +36,28 @@ export default function ProfileForm({ initialNomorHp, initialAddress }: { initia
           className="w-full bg-white border border-gray-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded-xl p-3 text-sm text-gray-700 shadow-sm transition-all" 
         />
       </div>
+      
       <div>
-        <label className="text-xs font-medium text-gray-700 mb-1 block">Metode Pengambilan Kue</label>
+        <label className="text-xs font-medium text-gray-700 mb-1 block">Alamat Lengkap (Untuk Keamanan & Verifikasi)</label>
         <textarea 
           name="address"
           defaultValue={initialAddress}
-          rows={3} 
+          rows={2} 
+          placeholder="Tuliskan alamat rumah/kantor untuk menghindari penipuan order..." 
+          className="w-full bg-white border border-gray-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded-xl p-3 text-sm text-gray-700 shadow-sm transition-all"
+        ></textarea>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-gray-700 mb-1 block">Metode Pengambilan Kue</label>
+        <textarea 
+          name="metode_ambil"
+          defaultValue={initialMetodeAmbil}
+          rows={2} 
           placeholder="Contoh: Diambil sendiri jam 4 sore, atau dijemput Kurir (GoSend/GrabExpress)..." 
           className="w-full bg-white border border-gray-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded-xl p-3 text-sm text-gray-700 shadow-sm transition-all"
         ></textarea>
       </div>
+
       
       <button 
         type="submit"

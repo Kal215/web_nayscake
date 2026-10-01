@@ -12,7 +12,7 @@ export async function getDbUserForCheckout() {
 
   const dbUser = await prisma.user.findUnique({
     where: { email: primaryEmail },
-    select: { nomor_hp: true, address: true }
+    select: { nomor_hp: true, address: true, metode_ambil: true }
   });
 
   return dbUser;

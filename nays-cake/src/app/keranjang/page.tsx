@@ -45,8 +45,9 @@ export default function KeranjangPage() {
     const nama = user?.fullName || user?.firstName || "Pelanggan Setia";
     const email = user?.primaryEmailAddress?.emailAddress || "Tidak ada email";
     const nomorHp = dbUser?.nomor_hp || "Belum diisi (Mohon lengkapi di profil)";
-    const metodeAmbil = dbUser?.address || "Belum diisi (Mohon lengkapi di profil)";
-    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}%0A📞 No. HP: ${nomorHp}%0A🛍️ Metode Ambil: ${metodeAmbil}`;
+    const alamat = dbUser?.address || "Belum diisi (Mohon lengkapi di profil)";
+    const metodeAmbil = dbUser?.metode_ambil || "Belum diisi (Mohon lengkapi di profil)";
+    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}%0A📞 No. HP: ${nomorHp}%0A📍 Alamat: %0A🛍️ Metode Ambil: ${metodeAmbil}`;
 
     const pesan = cartItems.map((i) => `▪ ${i.quantity}x ${i.name}`).join('%0A');
     const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;

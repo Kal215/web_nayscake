@@ -13,6 +13,7 @@ export async function saveProfile(formData: FormData) {
 
   const nomor_hp = formData.get("nomor_hp") as string;
   const address = formData.get("address") as string;
+  const metode_ambil = formData.get("metode_ambil") as string;
 
   // Upsert user to ensure they exist in db
   await prisma.user.upsert({

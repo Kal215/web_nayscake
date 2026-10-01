@@ -72,7 +72,7 @@ export default async function ProfilPage() {
           
           <ProfileForm 
             initialNomorHp={dbUser?.nomor_hp || ""} 
-            initialAddress={dbUser?.address || ""} 
+            initialAddress={dbUser?.address || ""} initialMetodeAmbil={dbUser?.metode_ambil || ""} 
           />
         </div>
 

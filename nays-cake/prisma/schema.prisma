@@ -24,6 +24,7 @@ model User {
   imageUrl  String?
   nomor_hp  String?
   address   String?
+  metode_ambil String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
