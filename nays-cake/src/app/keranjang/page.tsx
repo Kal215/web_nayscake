@@ -6,7 +6,7 @@ import { ShoppingCart, ArrowLeft, Trash2, Plus, Minus, MessageCircle } from "luc
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useCartStore } from "@/store/cartStore";
-import { getDbUserForCheckout } from "./actions";
+import { getDbUserForCheckout, createDraftOrder } from "./actions";
 
 export default function KeranjangPage() {
   const [mounted, setMounted] = useState(false);
@@ -31,6 +31,7 @@ export default function KeranjangPage() {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   const handleCheckout = () => {
@@ -131,7 +132,7 @@ export default function KeranjangPage() {
                 </div>
               </div>
               <button onClick={handleCheckout} className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-green-500/30 hover:-translate-y-0.5 active:scale-[0.98]">
-                <MessageCircle className="w-6 h-6"/> Pesan Sekarang via WhatsApp
+                {isSubmitting ? 'Memproses...' : <><MessageCircle className="w-6 h-6"/> Pesan Sekarang via WhatsApp</>}
               </button>
             </div>
           </div>

@@ -65,6 +65,21 @@ export async function guestSend(id: string, text: string, requestId: string, han
     return { jobId, wasHandoff: handoff && c.mode !== "ADMIN" };
   });
 
+  // Jika ini balasan lanjutan saat mode ADMIN sudah aktif, lempar ke Telegram Mamah
+  if (!handoff && result === null) {
+      // Kita perlu mengecek apakah percakapan sedang di mode ADMIN
+      const c = await prisma.chatConversation.findUnique({ where: { id } });
+      if (c && c.mode === 'ADMIN') {
+          try {
+              await fetch('http://localhost:3030/api/lyra/admin_reply', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ jid: id, source: 'web', text })
+              });
+          } catch(err) { console.error("Gagal webhook admin_reply", err); }
+      }
+  }
+
   if (result && result.wasHandoff) {
     const hist = await prisma.chatMessage.findMany({ where: { conversationId: id }, orderBy: { sequence: "desc" }, take: 5, select: { role: true, content: true } });
     const textHist = hist.reverse().map(m => (m.role === 'VISITOR' ? 'Pelanggan: ' : 'Bot: ') + m.content).join('\n');
