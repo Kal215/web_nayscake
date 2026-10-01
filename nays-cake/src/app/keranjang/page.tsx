@@ -6,9 +6,11 @@ import { ShoppingCart, ArrowLeft, Trash2, Plus, Minus, MessageCircle } from "luc
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useCartStore } from "@/store/cartStore";
+import { getDbUserForCheckout } from "./actions";
 
 export default function KeranjangPage() {
   const [mounted, setMounted] = useState(false);
+  const [dbUser, setDbUser] = useState<any>(null);
   const { user, isSignedIn, isLoaded } = useUser();
   const clerk = useClerk();
 
@@ -20,7 +22,10 @@ export default function KeranjangPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (isSignedIn) {
+      getDbUserForCheckout().then(data => setDbUser(data));
+    }
+  }, [isSignedIn]);
 
   if (!mounted) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
@@ -39,7 +44,9 @@ export default function KeranjangPage() {
 
     const nama = user?.fullName || user?.firstName || "Pelanggan Setia";
     const email = user?.primaryEmailAddress?.emailAddress || "Tidak ada email";
-    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}`;
+    const nomorHp = dbUser?.nomor_hp || "Belum diisi (Mohon lengkapi di profil)";
+    const alamat = dbUser?.address || "Belum diisi (Mohon lengkapi di profil)";
+    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}%0A📞 No. HP: ${nomorHp}%0A📍 Alamat: ${alamat}`;
 
     const pesan = cartItems.map((i) => `▪ ${i.quantity}x ${i.name}`).join('%0A');
     const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;

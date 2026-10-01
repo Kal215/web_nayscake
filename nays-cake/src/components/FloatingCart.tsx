@@ -5,6 +5,7 @@ import { ShoppingCart, X, Plus, Minus, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useCartStore } from "@/store/cartStore";
+import { getDbUserForCheckout } from "@/app/keranjang/actions";
 
 export default function FloatingCart() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function FloatingCart() {
 
   // Zustand state needs to be loaded on client to avoid hydration mismatch
   const [mounted, setMounted] = useState(false);
+  const [dbUser, setDbUser] = useState<any>(null);
   
   const { user, isSignedIn, isLoaded } = useUser();
   const clerk = useClerk();
@@ -25,8 +27,13 @@ export default function FloatingCart() {
     setMounted(true);
     const handleAdd = () => setIsOpen(true);
     window.addEventListener("ADD_TO_CART", handleAdd);
+    
+    if (isSignedIn) {
+      getDbUserForCheckout().then(data => setDbUser(data));
+    }
+    
     return () => window.removeEventListener("ADD_TO_CART", handleAdd);
-  }, []);
+  }, [isSignedIn]);
 
   if (!mounted) return null;
 
@@ -44,7 +51,9 @@ export default function FloatingCart() {
 
     const nama = user?.fullName || user?.firstName || "Pelanggan Setia";
     const email = user?.primaryEmailAddress?.emailAddress || "Tidak ada email";
-    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}`;
+    const nomorHp = dbUser?.nomor_hp || "Belum diisi (Mohon lengkapi di profil)";
+    const alamat = dbUser?.address || "Belum diisi (Mohon lengkapi di profil)";
+    const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}%0A📞 No. HP: ${nomorHp}%0A📍 Alamat: ${alamat}`;
 
     const pesan = cartItems.map((i) => `▪ ${i.quantity}x ${i.name}`).join('%0A');
     const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;
