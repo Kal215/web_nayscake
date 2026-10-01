@@ -1,0 +1,39 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { currentUser } from "@clerk/nextjs/server";
+
+export async function saveProfile(formData: FormData) {
+  const user = await currentUser();
+  if (!user) throw new Error("Not logged in");
+
+  const primaryEmail = user.emailAddresses[0]?.emailAddress;
+  if (!primaryEmail) throw new Error("No email found");
+
+  const whatsapp = formData.get("whatsapp") as string;
+  const address = formData.get("address") as string;
+
+  // Upsert user to ensure they exist in db
+  await prisma.user.upsert({
+    where: { email: primaryEmail },
+    update: {
+      whatsapp,
+      address,
+      name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Pengguna",
+      clerkId: user.id,
+      imageUrl: user.imageUrl,
+    },
+    create: {
+      email: primaryEmail,
+      clerkId: user.id,
+      name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Pengguna",
+      imageUrl: user.imageUrl,
+      whatsapp,
+      address,
+    }
+  });
+
+  revalidatePath("/profil");
+  return { success: true };
+}
