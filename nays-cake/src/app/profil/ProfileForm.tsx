@@ -37,12 +37,12 @@ export default function ProfileForm({ initialNomorHp, initialAddress }: { initia
         />
       </div>
       <div>
-        <label className="text-xs font-medium text-gray-700 mb-1 block">Alamat Pengiriman Utama</label>
+        <label className="text-xs font-medium text-gray-700 mb-1 block">Metode Pengambilan Kue</label>
         <textarea 
           name="address"
           defaultValue={initialAddress}
           rows={3} 
-          placeholder="Tuliskan alamat lengkap rumah/kantor untuk pengiriman..." 
+          placeholder="Contoh: Diambil sendiri jam 4 sore, atau dijemput Kurir (GoSend/GrabExpress)..." 
           className="w-full bg-white border border-gray-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded-xl p-3 text-sm text-gray-700 shadow-sm transition-all"
         ></textarea>
       </div>
