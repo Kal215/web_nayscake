@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       products: products.map(p => ({ id: p.id, name: p.name, slug: p.slug, sellingPrice: Number(p.sellingPrice), category: p.category, supplier: p.supplier.name, stock: stock.get(p.id) || 0, minStock: p.minStock, isAvailable: (stock.get(p.id) || 0) > 0, imageUrl: p.imageUrl, ...(internal ? { costPrice: Number(p.costPrice), supplierId: p.supplierId } : {}) })),
       categories: [...new Set(products.map(p => p.category).filter(Boolean))],
-      suppliers: internal ? [...new Map(products.map(p => [p.supplierId, { id: p.supplierId, name: p.supplier.name }])).values()] : [],
+      suppliers: [...new Map(products.map(p => [p.supplierId, { id: p.supplierId, name: p.supplier.name }])).values()],
       total: products.length,
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) { return apiError(error); }
