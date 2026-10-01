@@ -34,7 +34,6 @@ export function Footer() {
             <ul className="space-y-3 text-gray-400">
               <li><a href="/" className="hover:text-amber-400 transition-colors">Beranda</a></li>
               <li><a href="/catalog" className="hover:text-amber-400 transition-colors">Katalog</a></li>
-              <li><a href="/dashboard" className="hover:text-amber-400 transition-colors">Dashboard</a></li>
             </ul>
           </div>
 

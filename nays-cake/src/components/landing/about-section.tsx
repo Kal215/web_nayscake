@@ -39,11 +39,11 @@ export function AboutSection() {
               Tentang Kami
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mt-4 mb-6">
-              Lebih dari Sekadar <span className="text-amber-600">Kue Basah</span>
+              Menghadirkan Kehangatan di <span className="text-amber-600">Setiap Gigitan</span>
             </h2>
             <div className="space-y-6 text-gray-600">
               <p className="text-lg leading-relaxed">
-                Dari lemper, risoles, pastel, hingga aneka bolu dan puding, Nay's Cake menghadirkan beragam pilihan makanan ringan berkualitas untuk menemani setiap momen. Diproduksi setiap hari dan dipasok oleh mitra terpercaya untuk menjaga kesegaran serta cita rasa terbaik.
+                Mulai dari gurihnya risoles dan lemper, hingga manisnya aneka bolu dan puding segar. Nay's Cake bukan sekadar toko kue, melainkan tempat di mana cita rasa autentik diracik sepenuh hati. Bersama mitra-mitra terbaik kami, semua produk dipastikan baru, wangi, dan fresh ketika sampai di tangan Anda.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 py-6">
                 {[
