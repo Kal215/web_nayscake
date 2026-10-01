@@ -33,7 +33,7 @@ export function ChatWidget() {
           {chat.view?.mode === "WAITING" && <p className="chat-status-note">Admin belum bergabung. Balasan mungkin tidak langsung tersedia.</p>}
           <div className="chat-tools">
             <button disabled={!chat.view || chat.busy || chat.view.mode !== "AI"} onClick={() => void chat.mutate("handoff")}><Headset size={16} />Hubungi Admin</button>
-            <a href="https://wa.me/6285126023250" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a href="https://wa.me/6281222133727" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
           <ChatComposer disabled={!chat.view || !!chat.view.pending} busy={chat.busy} onSend={text => chat.mutate("message", text)} />
         </div>

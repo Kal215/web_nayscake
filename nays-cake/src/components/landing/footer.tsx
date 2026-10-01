@@ -18,7 +18,7 @@ export function Footer() {
               Toko kue basah segar setiap hari dengan lebih dari 77 varian pilihan berkualitas.
             </p>
             <a
-              href="https://wa.me/6285126023250"
+              href="https://wa.me/6281222133727"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 rounded-full font-semibold transition-colors"
@@ -48,7 +48,10 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                <span>+6285126023250</span>
+                <div className="flex flex-col gap-0">
+                  <span>081222133727</span>
+                  <span>081320101230</span>
+                </div>
               </li>
               <li className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />

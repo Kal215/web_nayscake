@@ -72,7 +72,7 @@ export function ProductCard({ id, name, slug, price, imageUrl, stock, index }: P
         </div>
 
         <a
-          href={`https://wa.me/6285126023250?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(name)}`}
+          href={`https://wa.me/6281222133727?text=Halo,%20saya%20mau%20pesan%20${encodeURIComponent(name)}`}
           target="_blank"
           rel="noopener noreferrer"
           className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all duration-300 ${isAvailable

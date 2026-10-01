@@ -75,7 +75,7 @@ export function HeroSection() {
             <ArrowRight className="w-5 h-5" />
           </Link>
           <a
-            href="https://wa.me/6285126023250"
+            href="https://wa.me/6281222133727"
             target="_blank"
             rel="noopener noreferrer"
             className="neo-action flex items-center gap-3 px-8 py-4 bg-white text-gray-800 font-semibold rounded-full shadow-lg hover:shadow-xl border border-gray-200 hover:border-amber-300 transition-all duration-300 hover:scale-105"

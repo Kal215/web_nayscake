@@ -48,7 +48,7 @@ export default function FloatingCart() {
 
     const pesan = cartItems.map((i) => `▪ ${i.quantity}x ${i.name}`).join('%0A');
     const teks = `Halo Asisten AI Nay's Cake! 🎂%0A%0ASaya ingin *Checkout* pesanan dari Website:%0A${pesan}%0A%0A${infoPelanggan}%0A%0A*Estimasi Total: Rp${total.toLocaleString("id-ID")}*%0A%0AMohon segera diproses dan kirimkan total tagihannya ya!`;
-    const nomorBot = "6285703586056";
+    const nomorBot = "6281222133727";
     
     // Perbaikan untuk Android WebView (APK)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);

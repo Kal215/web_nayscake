@@ -88,7 +88,7 @@ export default function CatalogPage() {
     const infoPelanggan = `*Data Pelanggan:*%0A👤 Nama: ${nama}%0A📧 Email: ${email}`;
     
     const teks = `Halo,%20saya%20mau%20pesan%20${encodeURIComponent(product.name)}%20dari%20${encodeURIComponent(product.supplier)}%0A%0A${infoPelanggan}`;
-    window.open(`https://wa.me/6285126023250?text=${teks}`, "_blank");
+    window.open(`https://wa.me/6281222133727?text=${teks}`, "_blank");
   };
 
   const [products, setProducts] = useState<Product[]>([]);
