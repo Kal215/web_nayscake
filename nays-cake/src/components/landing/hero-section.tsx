@@ -5,15 +5,10 @@ import { ArrowRight, ChevronDown, MessageCircle, ShoppingBag } from "lucide-reac
 import Link from "next/link";
 
 
-interface HeroStats {
-  products: number;
-  suppliers: number;
-  customers: number;
-}
 
-export function HeroSection({ stats }: { stats?: HeroStats }) {
-  const displayStats = stats || { products: 77, suppliers: 29, customers: 1000 };
 
+export function HeroSection() {
+  
   return (
     <section className="neo-hero relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Hero Background Image */}
@@ -93,26 +88,7 @@ export function HeroSection({ stats }: { stats?: HeroStats }) {
           </a>
         </motion.div>
 
-        {/* Stats Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-10 flex flex-wrap justify-center gap-8 sm:gap-12"
-        >
-          {[
-            { number: `${displayStats.products}+`, label: "Varian Kue" },
-            { number: `${displayStats.suppliers}+`, label: "Mitra UMKM" },
-            { number: `${displayStats.customers + 1000}+`, label: "Pelanggan Setia" },
-          ].map((stat, index) => (
-            <div key={index} className="text-center">
-              <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
-                {stat.number}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
-            </div>
-          ))}
-        </motion.div>
+        
       </div>
 
       {/* Scroll Indicator */}

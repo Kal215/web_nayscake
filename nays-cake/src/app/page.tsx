@@ -48,7 +48,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen">
-      <HeroSection stats={stats} />
+      <HeroSection />
       <StatsSection stats={stats} />
       <AboutSection />
       <ProductsSection initialProducts={products} />

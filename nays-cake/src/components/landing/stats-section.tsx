@@ -76,7 +76,7 @@ export function StatsSection({ stats }: StatsSectionProps) {
             <div className="text-5xl md:text-6xl lg:text-7xl text-white mb-2">
               <Counter end={displayStats.products} suffix="+" />
             </div>
-            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Produk</div>
+            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Varian Kue</div>
             <div className="mt-2 text-emerald-100 text-sm">Pilihan Rasa Premium</div>
           </motion.div>
           <motion.div
@@ -89,8 +89,8 @@ export function StatsSection({ stats }: StatsSectionProps) {
             <div className="text-5xl md:text-6xl lg:text-7xl text-white mb-2">
               <Counter end={displayStats.suppliers} suffix="+" />
             </div>
-            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Supplier</div>
-            <div className="mt-2 text-emerald-100 text-sm">Mitra UMKM Terpercaya</div>
+            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Mitra UMKM</div>
+            <div className="mt-2 text-emerald-100 text-sm">Partner Terpercaya</div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -102,7 +102,7 @@ export function StatsSection({ stats }: StatsSectionProps) {
             <div className="text-5xl md:text-6xl lg:text-7xl text-white mb-2">
               <Counter end={displayStats.customers + 1000} suffix="+" />
             </div>
-            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Pelanggan</div>
+            <div className="text-xl md:text-2xl text-emerald-50 font-medium">Pelanggan Setia</div>
             <div className="mt-2 text-emerald-100 text-sm">Telah berbelanja di Nays Cake</div>
           </motion.div>
         </div>
