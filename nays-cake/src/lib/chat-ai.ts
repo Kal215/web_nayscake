@@ -58,7 +58,19 @@ export async function answerChat(history: { role: string; content: string }[]) {
     if (rows.length > 500) return HANDOFF_REPLY;
     const products = rows.map(p => ({ ...p, sellingPrice: Number(p.sellingPrice), supplier: p.supplier.name }));
     if (intent === "catalog") return catalogReply(products);
+
+    // Ambil Fakta Dinamis (Hasil Belajar)
+    let dynamicFacts = "";
+    try {
+      const dbFacts = await prisma.botFact.findMany({ where: { approved: true } });
+      dynamicFacts = dbFacts.map((f: any) => `${f.topic}: ${f.text}`).join("\n");
+    } catch (e) { console.error(e); }
+    
     const prompt = `Anda adalah Lyra, asisten AI ramah dari toko Nay's Cake. Berikan balasan langsung dan luwes kepada pelanggan berdasarkan percakapan.
+Fakta Tambahan (Wajib Dipatuhi jika relevan):
+${dynamicFacts}
+
+
 Jika pelanggan bertanya rekomendasi kue atau menu, berikan beberapa opsi dari katalog (beserta harganya) secara natural.
 Jangan menyuruh pelanggan bertanya ke admin jika kamu bisa menjawabnya sendiri dari katalog atau fakta.
 Aturan:

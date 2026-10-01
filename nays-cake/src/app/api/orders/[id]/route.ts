@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     await requireOperator(request);
     const { id } = await params;
-    const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+    const order = await prisma.order.findFirst({ where: { OR: [{ id }, { orderNumber: id }] }, include: { items: true } });
     if (!order) throw new ApiError(404, "Pesanan tidak ditemukan");
     const history = await prisma.auditLog.findMany({ where: { entityId: id }, orderBy: { createdAt: "desc" }, take: 50 });
     return NextResponse.json({ order, history });
