@@ -14,7 +14,8 @@ export async function recordSale(tx: Prisma.TransactionClient, input: SaleInput,
     const entries = await tx.stockEntry.findMany({ where: { productId, date: dayRange() } });
     if (entries.some(e => e.quantityRemaining !== null)) throw new ApiError(409, "Stok produk sudah ditutup hari ini");
     const sold = await tx.saleItem.aggregate({ where: { productId, sale: { saleDate: dayRange() } }, _sum: { quantity: true } });
-    if (entries.reduce((s, e) => s + e.quantityIn, 0) - (sold._sum.quantity || 0) < quantity) throw new ApiError(409, "Stok tidak cukup. Catat stok masuk terlebih dahulu.");
+    const reservedOrders = await tx.orderItem.aggregate({ where: { productId, order: { createdAt: dayRange(), status: { in: ["MENUNGGU", "DIKONFIRMASI"] }, id: { not: input.orderId || undefined } } }, _sum: { quantity: true } });
+    if (entries.reduce((s, e) => s + e.quantityIn, 0) - (sold._sum.quantity || 0) - (reservedOrders._sum.quantity || 0) < quantity) throw new ApiError(409, "Stok tidak cukup (sudah dipesan pelanggan lain). Catat stok masuk terlebih dahulu.");
   }
   const items = input.items.map(i => {
     const p = products.find(p => p.id === i.productId);
