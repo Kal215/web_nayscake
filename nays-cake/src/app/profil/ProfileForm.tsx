@@ -49,19 +49,34 @@ export default function ProfileForm({ initialNomorHp, initialAddress, initialMet
       </div>
       <div>
         <label className="text-xs font-medium text-gray-700 mb-2 block">Metode Pengambilan Kue</label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="relative cursor-pointer">
             <input 
               type="radio" 
               name="metode_ambil" 
-              value="🏪 Ambil Sendiri ke Toko" 
-              defaultChecked={!initialMetodeAmbil || initialMetodeAmbil.includes("Toko") || initialMetodeAmbil.includes("Ambil")}
+              value="🏪 Ambil di Toko Utama (Cililin)" 
+              defaultChecked={!initialMetodeAmbil || initialMetodeAmbil.includes("Utama") || initialMetodeAmbil.includes("Cililin")}
               className="peer sr-only" 
             />
-            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center">
+            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center h-full flex flex-col justify-center">
               <span className="block text-2xl mb-1">🏪</span>
-              <span className="block text-sm font-bold text-gray-700">Ambil Sendiri</span>
-              <span className="block text-[10px] text-gray-500 mt-1">Ke lokasi Nays Cake</span>
+              <span className="block text-sm font-bold text-gray-700">Toko Utama</span>
+              <span className="block text-[10px] text-gray-500 mt-1 leading-tight">Cililin Timur RT.04 RW.03<br/>Kec. Cililin</span>
+            </div>
+          </label>
+
+          <label className="relative cursor-pointer">
+            <input 
+              type="radio" 
+              name="metode_ambil" 
+              value="🏪 Ambil di Cabang (Rancapanggung)" 
+              defaultChecked={initialMetodeAmbil.includes("Cabang") || initialMetodeAmbil.includes("Ranca")}
+              className="peer sr-only" 
+            />
+            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center h-full flex flex-col justify-center">
+              <span className="block text-2xl mb-1">🏪</span>
+              <span className="block text-sm font-bold text-gray-700">Cabang 2</span>
+              <span className="block text-[10px] text-gray-500 mt-1 leading-tight">Jl. Rancapanggung RT.1 RW.9<br/>Cililin</span>
             </div>
           </label>
           
@@ -73,10 +88,10 @@ export default function ProfileForm({ initialNomorHp, initialAddress, initialMet
               defaultChecked={initialMetodeAmbil.includes("Kurir") || initialMetodeAmbil.includes("Ojol") || initialMetodeAmbil.includes("GoSend")}
               className="peer sr-only" 
             />
-            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center">
+            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center h-full flex flex-col justify-center">
               <span className="block text-2xl mb-1">🛵</span>
-              <span className="block text-sm font-bold text-gray-700">Via Kurir (Ojol)</span>
-              <span className="block text-[10px] text-gray-500 mt-1">GoSend / GrabExpress</span>
+              <span className="block text-sm font-bold text-gray-700">Via Kurir</span>
+              <span className="block text-[10px] text-gray-500 mt-1 leading-tight">Pesan Sendiri via<br/>GoSend / GrabExpress</span>
             </div>
           </label>
         </div>
