@@ -308,14 +308,4 @@ model ChatRateBucket {
 // ============================================================
 // BOT_FACT - Otak Pusat (Knowledge Base Dinamis)
 // ============================================================
-model BotFact {
-  id        String   @id @default(cuid())
-  topic     String
-  text      String
-  approved  Boolean  @default(true)
-  source    String   @default("telegram") 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  @@map("bot_facts")
-}
