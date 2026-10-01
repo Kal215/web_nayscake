@@ -222,7 +222,7 @@ const filterAndSortProducts = () => {
               <label className="block text-[10px] font-medium text-gray-700 mb-1">Kategori</label>
               <select aria-label="Kategori" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="neo-control w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white">
                 <option value="">Semua</option>
-                {categories.map((cat) => <option key={cat} value={cat}>🍽️ {cat}</option>)}
+                {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
             <div>
@@ -288,9 +288,9 @@ const filterAndSortProducts = () => {
             <label className="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
             <div className="relative">
               <select aria-label="Kategori" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="neo-control w-full px-3 py-2 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-xs appearance-none">
-                <option value="">🍽️ Semua</option>
+                <option value="">Semua</option>
                 {categories.map((cat) => {
-                  return <option key={cat} value={cat}>🍽️ {cat}</option>;
+                  return <option key={cat} value={cat}>{cat}</option>;
                 })}
               </select>
               <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -363,7 +363,7 @@ const filterAndSortProducts = () => {
                           <span className={`px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium rounded-full ${stockStatus.class}`}>{stockStatus.label}</span>
                         </motion.div>
                         <motion.div className="absolute top-2 left-2 sm:top-3 sm:left-3 max-w-[calc(100%_-_88px)]" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + index * 0.02 }}>
-                          <span title={product.category} className="block truncate px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium bg-white/90 text-gray-700 rounded-full backdrop-blur-sm">🍽️ {product.category}</span>
+                          <span title={product.category} className="block truncate px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium bg-white/90 text-gray-700 rounded-full backdrop-blur-sm">{product.category}</span>
                         </motion.div>
                         {product.isAvailable && (
                           <motion.div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4" animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
@@ -421,7 +421,7 @@ const filterAndSortProducts = () => {
                 )}
                 <div className="absolute top-4 left-4">
                   <span className="px-3 py-1.5 text-sm font-medium bg-white/90 text-gray-700 rounded-full backdrop-blur-sm shadow-sm">
-                    🍽️ {selectedProduct.category}
+                    {selectedProduct.category}
                   </span>
                 </div>
               </div>
