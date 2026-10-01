@@ -278,7 +278,7 @@ const filterAndSortProducts = () => {
           </Link>
           <div className="mb-4">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">Katalog Produk</h1>
-            <p className="text-xs text-gray-600 mt-1">Pilih kue basah segar berkualitas</p>
+            <p className="text-xs text-gray-600 mt-1">Temukan aneka jajanan favorit Anda</p>
           </div>
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -329,12 +329,12 @@ const filterAndSortProducts = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-amber-50/70 via-white/60 to-orange-50/70" />
           <motion.div style={{ y: heroY, opacity: heroOpacity, scale: heroScale }} className="relative py-8 sm:py-12 md:py-16 text-center px-4">
             <motion.h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-              <span className="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">Kue Masih Segar</span>
+              <span className="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">Katalog Nays Cake</span>
               <br />
-              <span className="text-gray-700 text-xl sm:text-2xl md:text-3xl lg:text-4xl">Langsung dari Supplier</span>
+              <span className="text-gray-700 text-xl sm:text-2xl md:text-3xl lg:text-4xl">Selalu Fresh Setiap Pagi</span>
             </motion.h2>
             <motion.p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.2 }}>
-              Jelajahi berbagai pilihan kue basah, gorengan, dan jajanan tradisional berkualitas tinggi
+              Pilih aneka kue basah, bolu, gorengan, dan jajanan tradisional favorit Anda. Siap menemani setiap momen kebersamaan keluarga.
             </motion.p>
           </motion.div>
         </div>
@@ -344,7 +344,7 @@ const filterAndSortProducts = () => {
           {loading ? (
             <div className="flex items-center justify-center py-16 sm:py-20"><div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-amber-500 border-t-transparent"></div></div>
           ) : currentProducts.length === 0 ? (
-            <div className="text-center py-16 sm:py-20"><Package className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" /><p className="text-gray-500">Tidak ada produk ditemukan</p></div>
+            <div className="text-center py-16 sm:py-20"><Package className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" /><p className="text-gray-500">Kue yang Anda cari belum tersedia</p></div>
           ) : (
             <>
               <motion.div className="text-center mb-4 sm:mb-6 text-sm sm:text-base text-gray-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Menampilkan {products.length} produk</motion.div>
