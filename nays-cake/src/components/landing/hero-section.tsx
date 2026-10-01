@@ -5,7 +5,15 @@ import { ArrowRight, ChevronDown, MessageCircle, ShoppingBag } from "lucide-reac
 import Link from "next/link";
 
 
-export function HeroSection() {
+interface HeroStats {
+  products: number;
+  suppliers: number;
+  customers: number;
+}
+
+export function HeroSection({ stats }: { stats?: HeroStats }) {
+  const displayStats = stats || { products: 77, suppliers: 29, customers: 1000 };
+
   return (
     <section className="neo-hero relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Hero Background Image */}
@@ -93,9 +101,9 @@ export function HeroSection() {
           className="mt-10 flex flex-wrap justify-center gap-8 sm:gap-12"
         >
           {[
-            { number: "77+", label: "Produk" },
-            { number: "29+", label: "Supplier" },
-            { number: "1000+", label: "Pelanggan" },
+            { number: `${displayStats.products}+`, label: "Varian Kue" },
+            { number: `${displayStats.suppliers}+`, label: "Mitra UMKM" },
+            { number: `${displayStats.customers + 1000}+`, label: "Pelanggan Setia" },
           ].map((stat, index) => (
             <div key={index} className="text-center">
               <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
