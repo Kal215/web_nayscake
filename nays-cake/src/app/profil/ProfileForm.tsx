@@ -48,14 +48,38 @@ export default function ProfileForm({ initialNomorHp, initialAddress, initialMet
         ></textarea>
       </div>
       <div>
-        <label className="text-xs font-medium text-gray-700 mb-1 block">Metode Pengambilan Kue</label>
-        <textarea 
-          name="metode_ambil"
-          defaultValue={initialMetodeAmbil}
-          rows={2} 
-          placeholder="Contoh: Diambil sendiri jam 4 sore, atau dijemput Kurir (GoSend/GrabExpress)..." 
-          className="w-full bg-white border border-gray-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded-xl p-3 text-sm text-gray-700 shadow-sm transition-all"
-        ></textarea>
+        <label className="text-xs font-medium text-gray-700 mb-2 block">Metode Pengambilan Kue</label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="relative cursor-pointer">
+            <input 
+              type="radio" 
+              name="metode_ambil" 
+              value="🏪 Ambil Sendiri ke Toko" 
+              defaultChecked={!initialMetodeAmbil || initialMetodeAmbil.includes("Toko") || initialMetodeAmbil.includes("Ambil")}
+              className="peer sr-only" 
+            />
+            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center">
+              <span className="block text-2xl mb-1">🏪</span>
+              <span className="block text-sm font-bold text-gray-700">Ambil Sendiri</span>
+              <span className="block text-[10px] text-gray-500 mt-1">Ke lokasi Nays Cake</span>
+            </div>
+          </label>
+          
+          <label className="relative cursor-pointer">
+            <input 
+              type="radio" 
+              name="metode_ambil" 
+              value="🛵 Dikirim via Kurir (Ojol)" 
+              defaultChecked={initialMetodeAmbil.includes("Kurir") || initialMetodeAmbil.includes("Ojol") || initialMetodeAmbil.includes("GoSend")}
+              className="peer sr-only" 
+            />
+            <div className="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-1 peer-checked:ring-amber-500 transition-all text-center">
+              <span className="block text-2xl mb-1">🛵</span>
+              <span className="block text-sm font-bold text-gray-700">Via Kurir (Ojol)</span>
+              <span className="block text-[10px] text-gray-500 mt-1">GoSend / GrabExpress</span>
+            </div>
+          </label>
+        </div>
       </div>
 
       
