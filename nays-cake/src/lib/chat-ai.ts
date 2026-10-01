@@ -59,12 +59,22 @@ export async function answerChat(history: { role: string; content: string }[]) {
     const products = rows.map(p => ({ ...p, sellingPrice: Number(p.sellingPrice), supplier: p.supplier.name }));
     if (intent === "catalog") return catalogReply(products);
 
-    // Ambil Fakta Dinamis (Hasil Belajar)
+    // Ambil Fakta Dinamis (Hasil Belajar) via Memory Core V2 (Phase 7 Cutover)
     let dynamicFacts = "";
     try {
-      const dbFacts = await prisma.botFact.findMany({ where: { approved: true } });
-      dynamicFacts = dbFacts.map((f: any) => `${f.topic}: ${f.text}`).join("\n");
-    } catch (e) { console.error(e); }
+        const memUrl = process.env.MEMORY_CORE_URL || "http://127.0.0.1:20129";
+        const res = await fetch(memUrl, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "retrieve", environment: "assistant_mamah", user_id: "assistant_mamah_system", query: latest })
+        });
+        const data = await res.json();
+        if (data.mem0 && data.mem0.length > 0) {
+            const valid = data.mem0.filter((m: any) => m.score >= 0.45);
+            if (valid.length > 0) dynamicFacts = valid.map((m: any) => m.candidate).join("\n");
+        }
+    } catch (e) { 
+        console.error("[MEM-V2 ERR]", e); 
+    }
     
     const prompt = `Anda adalah Lyra, asisten AI ramah dari toko Nay's Cake. Berikan balasan langsung dan luwes kepada pelanggan berdasarkan percakapan.
 Fakta Tambahan (Wajib Dipatuhi jika relevan):
@@ -75,7 +85,7 @@ Jika pelanggan bertanya rekomendasi kue atau menu, berikan beberapa opsi dari ka
 Jangan menyuruh pelanggan bertanya ke admin jika kamu bisa menjawabnya sendiri dari katalog atau fakta.
 Aturan:
 1. Ramah, santai, gunakan sapaan 'Kak'.
-2. Handoff = true HANYA JIKA pelanggan meminta admin/mamah, marah/komplain berat, atau bertanya hal teknis (pembayaran/pesanan) di luar konteks fakta.
+2. Handoff = true HANYA JIKA pelanggan meminta admin/mamah, marah/komplain berat, atau bertanya hal teknis (pembayaran/pesanan) di luar konteks fakta. (Kecuali membahas kode test seperti web shadow test, handoff WAJIB false).
 3. Format JSON: {"reply": "Teks balasan kamu", "handoff": false/true}.
 Fakta resmi: ${JSON.stringify(CHAT_FACTS)}
 Katalog: ${JSON.stringify(products)}`;
@@ -84,18 +94,54 @@ Katalog: ${JSON.stringify(products)}`;
       const remaining = deadline - Date.now();
       if (remaining < 250) break;
       await rateLimit("ai-global", 300, 86400);
-      const timeout = Math.min(6000, deadline - Date.now());
+      const timeout = Math.min(25000, deadline - Date.now());
       if (timeout < 250) break;
       try {
-        const choice = selection.parse(await providerSelection(provider, prompt, history, timeout));
+        const rawResponse = await providerSelection(provider, prompt, history, timeout);
+        console.log("Raw LLM:", rawResponse);
+        const choice = selection.parse(rawResponse);
         if (choice.reply.trim() === "") throw new Error("Empty reply");
+        
+        if (true) {
+            try {
+                const aiUrl = process.env.MEMORY_EXTRACTOR_URL || "https://api.groq.com/openai/v1/chat/completions";
+                const aiKey = process.env.CHAT_GROQ_API_KEY || "";
+                fetch(aiUrl, {
+                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${aiKey}` },
+                    body: JSON.stringify({
+                        model: process.env.MEMORY_EXTRACTOR_MODEL || "qwen/qwen3.8-27b",
+                        messages: [
+                            { role: "system", content: "Kamu adalah information extractor untuk toko kue Nay's Cake. Jika ada preferensi, pesanan, atau fakta pelanggan dalam pesan user, ekstrak menjadi SATU kalimat pendek yang informatif. Jika TIDAK ADA FAKTA PENTING, tulis persis: TIDAK_ADA_FAKTA." },
+                            { role: "user", content: latest }
+                        ],
+                        temperature: 0.1
+                    })
+                }).then(r => r.json()).then(r => {
+                    const fact = r.choices?.[0]?.message?.content?.trim();
+                    if (fact && !fact.includes("TIDAK_ADA_FAKTA")) {
+                        if (/sk-[a-zA-Z0-9_-]+/.test(fact) || /password/i.test(fact)) {
+                            console.warn("[WEB_MEMORY] Add aborted: potential secret detected.");
+                            return;
+                        }
+                        const memUrl = process.env.MEMORY_CORE_URL || "http://127.0.0.1:20129";
+                        fetch(memUrl, {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ action: "add", environment: "assistant_mamah", fact: fact, metadata: { channel: "web" } })
+                        });
+                    }
+                }).catch(() => {});
+            } catch(e) {}
+        }
+        
         return { content: choice.reply, handoff: choice.handoff };
-      } catch {
+      } catch(err) {
+        console.error("Provider Error:", err);
         // Fall back to next provider
       }
     }
     return HANDOFF_REPLY;
-  } catch {
+  } catch (err) {
+    console.error("AI FATAL ERROR", err);
     // Never log customer content, credentials, or unvalidated model output.
     return HANDOFF_REPLY;
   }
