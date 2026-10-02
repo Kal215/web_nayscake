@@ -14,11 +14,15 @@ export default function KeranjangPage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const clerk = useClerk();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Zustand Store
   const cartItems = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const clearCart = useCartStore((state) => state.clearCart);
+
+  const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   useEffect(() => {
     setMounted(true);
@@ -30,9 +34,6 @@ export default function KeranjangPage() {
   if (!mounted) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   const handleCheckout = () => {
     if (cartItems.length === 0) return;
